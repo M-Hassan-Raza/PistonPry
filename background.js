@@ -989,3 +989,90 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                      });
                    });
                    
+                   // Delete collection
+                   document.querySelectorAll('.delete-collection').forEach(button => {
+                     button.addEventListener('click', () => {
+                       if (confirm('Are you sure you want to delete this collection?')) {
+                         const collectionId = button.getAttribute('data-id');
+                         chrome.runtime.sendMessage({
+                           action: 'deleteCollection',
+                           id: collectionId
+                         }, response => {
+                           if (response.success) {
+                             const collectionItem = button.closest('.collection-item');
+                             collectionItem.remove();
+                             
+                             // Check if there are no more collections
+                             const collectionsContainer = document.getElementById('collectionsContainer');
+                             if (collectionsContainer.children.length === 0) {
+                               collectionsContainer.innerHTML = '<p>No saved collections yet.</p>';
+                             }
+                           } else {
+                             alert('Failed to delete collection: ' + response.error);
+                           }
+                         });
+                       }
+                     });
+                   });
+                 }
+                 
+                 // Attach event listeners
+                 attachCollectionEventListeners();
+                 
+                 // Set up event listeners for filter controls
+                 document.getElementById('filterInput').addEventListener('input', applyFilters);
+                 document.getElementById('typeFilter').addEventListener('change', applyFilters);
+                 document.getElementById('locationFilter').addEventListener('change', applyFilters);
+               </script>
+             </body>
+           </html>`;
+                    chrome.tabs.create({ url: 'data:text/html;charset=UTF-8,' + encodeURIComponent(newTabContent) });
+               });
+          } else {
+               // Inform the user that no links were found, by injecting a small script to show an alert on the active tab.
+               if (sender.tab && sender.tab.id) {
+                    chrome.scripting.executeScript({
+                         target: { tabId: sender.tab.id },
+                         func: () => { alert("No links found in the selected region."); }
+                    }).catch(err => console.error("Failed to show 'no links found' alert: ", err));
+               } else {
+                    console.log("No links found, and no sender tab ID to show an alert.");
+               }
+          }
+          sendResponse({ status: "Links processed" });
+     } else if (request.action === 'saveCollection') {
+          // Handle save collection request
+          saveLinkCollection(request.name, request.links, request.sourceUrl)
+               .then(collection => {
+                    sendResponse({ success: true, collection });
+               })
+               .catch(error => {
+                    sendResponse({ success: false, error: error.message });
+               });
+          return true; // Keep the message channel open for async response
+     } else if (request.action === 'getCollection') {
+          // Handle get collection request
+          getAllCollections().then(collections => {
+               const collection = collections.find(c => c.id === request.id);
+               sendResponse({ collection });
+          });
+          return true; // Keep the message channel open for async response
+     } else if (request.action === 'deleteCollection') {
+          // Handle delete collection request
+          deleteCollection(request.id)
+               .then(() => {
+                    sendResponse({ success: true });
+               })
+               .catch(error => {
+                    sendResponse({ success: false, error: error.message });
+               });
+          return true; // Keep the message channel open for async response
+     } else if (request.action === 'getHistory') {
+          // Handle get history request
+          getExtractionHistory().then(history => {
+               sendResponse({ history });
+          });
+          return true; // Keep the message channel open for async response
+     }
+     return true; // Required for asynchronous sendResponse
+});
