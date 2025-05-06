@@ -6,7 +6,7 @@
      }
      window.isLinkExtractorDrawingActive = true;
 
-     let startX, startY, selectionDiv, overlayDiv;
+     let startX, startY, selectionDiv, overlayDiv, countIndicator;
      let isDrawing = false;
      const originalCursor = document.body.style.cursor;
      let highlightedLinks = new Set(); // Track currently highlighted links
@@ -33,6 +33,25 @@
           div.style.zIndex = '2147483647';
           div.style.pointerEvents = 'none';
           div.style.mixBlendMode = 'normal'; // Ensures the selection area stays white
+          document.body.appendChild(div);
+          return div;
+     }
+
+     function createCountIndicator() {
+          const div = document.createElement('div');
+          div.style.position = 'fixed';
+          div.style.backgroundColor = '#007bff';
+          div.style.color = 'white';
+          div.style.padding = '4px 8px';
+          div.style.borderRadius = '12px';
+          div.style.fontSize = '12px';
+          div.style.fontWeight = 'bold';
+          div.style.zIndex = '2147483647';
+          div.style.pointerEvents = 'none';
+          div.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+          div.style.transition = 'transform 0.1s ease-out';
+          div.textContent = '0 links';
+          div.style.display = 'none'; // Initially hidden
           document.body.appendChild(div);
           return div;
      }
@@ -92,6 +111,30 @@
                     unhighlightLink(link);
                }
           });
+
+          // Update count indicator
+          updateCountIndicator(currentlySelected.size);
+     }
+
+     function updateCountIndicator(count) {
+          if (!countIndicator) return;
+
+          countIndicator.style.display = count > 0 ? 'block' : 'none';
+          countIndicator.textContent = count + (count === 1 ? ' link' : ' links');
+
+          // Scale animation effect when count changes
+          countIndicator.style.transform = 'scale(1.1)';
+          setTimeout(() => {
+               if (countIndicator) countIndicator.style.transform = 'scale(1)';
+          }, 100);
+     }
+
+     function positionCountIndicator(x, y) {
+          if (!countIndicator) return;
+
+          // Position above and to the right of the cursor
+          countIndicator.style.left = `${x + 10}px`;
+          countIndicator.style.top = `${y - 30}px`;
      }
 
      function clearAllHighlights() {
@@ -119,6 +162,11 @@
           selectionDiv.style.width = '0px';
           selectionDiv.style.height = '0px';
 
+          // Create count indicator
+          if (countIndicator) countIndicator.remove();
+          countIndicator = createCountIndicator();
+          positionCountIndicator(startX, startY);
+
           document.addEventListener('mousemove', onMouseMove, true);
           document.addEventListener('mouseup', onMouseUp, true);
      }
@@ -140,6 +188,9 @@
           selectionDiv.style.top = `${newTop}px`;
           selectionDiv.style.width = `${width}px`;
           selectionDiv.style.height = `${height}px`;
+
+          // Position count indicator at the cursor position
+          positionCountIndicator(e.clientX, e.clientY);
 
           // Update link highlights based on current selection rectangle
           updateLinkHighlights({
@@ -171,6 +222,11 @@
           if (overlayDiv) {
                overlayDiv.remove();
                overlayDiv = null;
+          }
+
+          if (countIndicator) {
+               countIndicator.remove();
+               countIndicator = null;
           }
 
           if (selectionDiv) {
@@ -242,6 +298,7 @@
                     clearAllHighlights();
                     if (selectionDiv) selectionDiv.remove();
                     if (overlayDiv) overlayDiv.remove();
+                    if (countIndicator) countIndicator.remove();
                     document.removeEventListener('mousemove', onMouseMove, true);
                     document.removeEventListener('mouseup', onMouseUp, true);
                     document.removeEventListener('mousedown', onMouseDown, true); // Also remove the initial mousedown listener if it wasn't triggered

@@ -5,7 +5,8 @@
      "description": "Draw a rectangle on a webpage to extract links within that region.",
      "permissions": [
        "activeTab",
-       "scripting"
+       "scripting",
+       "storage"
      ],
      "action": {
        "default_title": "Extract Links by Region",
@@ -22,5 +23,14 @@
      },
      "background": {
        "service_worker": "background.js"
+     },
+     "commands": {
+       "_execute_action": {
+         "suggested_key": {
+           "default": "Alt+L",
+           "mac": "Command+L"
+         },
+         "description": "Activate link extraction tool"
+       }
      }
    }
