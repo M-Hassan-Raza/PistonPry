@@ -1,0 +1,26 @@
+{
+     "manifest_version": 3,
+     "name": "PistonPry",
+     "version": "1.0",
+     "description": "Draw a rectangle on a webpage to extract links within that region.",
+     "permissions": [
+       "activeTab",
+       "scripting"
+     ],
+     "action": {
+       "default_title": "Extract Links by Region",
+       "default_icon": {
+         "16": "images/icon16.png",
+         "48": "images/icon48.png",
+         "128": "images/icon128.png"
+       }
+     },
+     "icons": {
+       "16": "images/icon16.png",
+       "48": "images/icon48.png",
+       "128": "images/icon128.png"
+     },
+     "background": {
+       "service_worker": "background.js"
+     }
+   }
