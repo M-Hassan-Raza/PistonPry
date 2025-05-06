@@ -9,6 +9,7 @@
      let startX, startY, selectionDiv, overlayDiv;
      let isDrawing = false;
      const originalCursor = document.body.style.cursor;
+     let highlightedLinks = new Set(); // Track currently highlighted links
 
      function createOverlay() {
           const div = document.createElement('div');
@@ -34,6 +35,68 @@
           div.style.mixBlendMode = 'normal'; // Ensures the selection area stays white
           document.body.appendChild(div);
           return div;
+     }
+
+     function highlightLink(link) {
+          if (!highlightedLinks.has(link)) {
+               link.style.transition = 'all 0.1s ease-in-out';
+               link.style.backgroundColor = 'rgba(0, 123, 255, 0.3)';
+               link.style.borderRadius = '2px';
+               link.style.outline = '2px solid #007bff';
+               highlightedLinks.add(link);
+          }
+     }
+
+     function unhighlightLink(link) {
+          if (highlightedLinks.has(link)) {
+               link.style.backgroundColor = '';
+               link.style.outline = '';
+               link.style.transition = '';
+               highlightedLinks.delete(link);
+          }
+     }
+
+     function updateLinkHighlights(selectionRect) {
+          const allLinks = document.querySelectorAll('a[href]');
+          const currentlySelected = new Set();
+
+          allLinks.forEach(link => {
+               const linkRect = link.getBoundingClientRect();
+               const style = window.getComputedStyle(link);
+               const isVisible = style.display !== 'none' &&
+                    style.visibility !== 'hidden' &&
+                    style.opacity !== '0' &&
+                    linkRect.width > 0 &&
+                    linkRect.height > 0;
+
+               if (!isVisible) return;
+
+               const overlaps = !(
+                    selectionRect.right < linkRect.left ||
+                    selectionRect.left > linkRect.right ||
+                    selectionRect.bottom < linkRect.top ||
+                    selectionRect.top > linkRect.bottom
+               );
+
+               if (overlaps) {
+                    currentlySelected.add(link);
+                    highlightLink(link);
+               } else if (highlightedLinks.has(link)) {
+                    unhighlightLink(link);
+               }
+          });
+
+          // Remove highlights from links that are no longer selected
+          highlightedLinks.forEach(link => {
+               if (!currentlySelected.has(link)) {
+                    unhighlightLink(link);
+               }
+          });
+     }
+
+     function clearAllHighlights() {
+          highlightedLinks.forEach(link => unhighlightLink(link));
+          highlightedLinks.clear();
      }
 
      function onMouseDown(e) {
@@ -77,6 +140,14 @@
           selectionDiv.style.top = `${newTop}px`;
           selectionDiv.style.width = `${width}px`;
           selectionDiv.style.height = `${height}px`;
+
+          // Update link highlights based on current selection rectangle
+          updateLinkHighlights({
+               left: newLeft,
+               top: newTop,
+               right: newLeft + width,
+               bottom: newTop + height
+          });
      }
 
      function onMouseUp(e) {
@@ -94,7 +165,9 @@
           document.removeEventListener('mousedown', onMouseDown, true);
           document.body.style.cursor = originalCursor;
 
-          // Remove both overlay and selection div
+          // Remove highlights before removing divs
+          clearAllHighlights();
+
           if (overlayDiv) {
                overlayDiv.remove();
                overlayDiv = null;
@@ -166,6 +239,7 @@
           if (e.key === "Escape") {
                if (isDrawing || window.isLinkExtractorDrawingActive) { // Check if drawing has started or is armed
                     isDrawing = false;
+                    clearAllHighlights();
                     if (selectionDiv) selectionDiv.remove();
                     if (overlayDiv) overlayDiv.remove();
                     document.removeEventListener('mousemove', onMouseMove, true);
