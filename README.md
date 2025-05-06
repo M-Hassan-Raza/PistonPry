@@ -35,6 +35,7 @@ A Chrome extension that allows you to extract links from specific regions of a w
 ## Permissions
 
 This extension requires the following permissions:
+
 - `activeTab`: To interact with the current webpage
 - `scripting`: To inject content scripts for link extraction
 
