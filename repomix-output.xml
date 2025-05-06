@@ -1,3 +1,126 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+background.js
+content.js
+manifest.json
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="README.md">
+# PistonPry
+
+A Chrome extension that allows you to extract links from specific regions of a webpage by drawing a rectangle around them.
+
+## Features
+
+- Draw selection rectangles on any webpage
+- Automatically extract all links within the selected region
+- Simple and intuitive user interface
+- Works on any webpage with active tab permissions
+- Copy all extracted links to clipboard with one click
+- Filter links by domain or text content
+- Filter to show only valid links
+- Track total number of extracted/filtered links
+- Modern, clean results page design
+
+## Installation
+
+1. Clone this repository or download the source code
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top right corner
+4. Click "Load unpacked" and select the PistonPry directory
+
+## Usage
+
+1. Click the PistonPry icon in your Chrome toolbar
+2. Click and drag on any webpage to draw a rectangle
+3. Release to automatically extract all links within the selected region
+4. In the results page:
+   - Use the search box to filter links by domain or text
+   - Click "Copy All Links" to copy all links to clipboard
+   - Click "Show Valid Links" to filter out invalid URLs
+   - View the total number of links at the top of the page
+
+## Permissions
+
+This extension requires the following permissions:
+
+- `activeTab`: To interact with the current webpage
+- `scripting`: To inject content scripts for link extraction
+
+## File Structure
+
+```
+PistonPry/
+├── manifest.json       # Extension configuration
+├── background.js      # Background service worker
+├── content.js         # Content script for webpage interaction
+└── images/           # Extension icons
+    ├── icon16.png
+    ├── icon48.png
+    └── icon120.png
+```
+
+## Version
+
+Current version: 1.0
+
+## License
+
+I don't care what you do with this code. Go wild, have fun.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+</file>
+
+<file path="background.js">
 // Listen for when the user clicks the extension's browser action icon
 chrome.action.onClicked.addListener((tab) => {
      // Ensure the tab has a URL and it's an http/https page
@@ -215,96 +338,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
              <head>
                <title>Extracted Links</title>
                <style>
-                 /* Base styles */
                  body { 
                     font-family: system-ui, -apple-system, sans-serif; 
                     padding: 20px; 
                     max-width: 1200px; 
                     margin: 0 auto; 
                     background: #f5f5f5;
-                    color: #333;
-                 }
-                 * {
-                    box-sizing: border-box;
                  }
                  .container {
                     background: white;
-                    padding: 24px;
+                    padding: 20px;
                     border-radius: 8px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-                    margin-bottom: 24px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    margin-bottom: 20px;
                  }
-                 
-                 /* Header styles */
                  .header {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 24px;
-                    padding-bottom: 16px;
-                    border-bottom: 1px solid #eee;
-                 }
-                 .header h1 {
-                    margin: 0;
-                    font-size: 24px;
-                    color: #2c3e50;
-                 }
-                 
-                 /* Controls section */
-                 .controls-wrapper {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 16px;
-                    margin-bottom: 24px;
+                    margin-bottom: 20px;
                  }
                  .controls {
                     display: flex;
+                    gap: 10px;
+                    margin-bottom: 20px;
                     flex-wrap: wrap;
-                    gap: 16px;
-                    padding: 16px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                    border: 1px solid #e9ecef;
                  }
-                 .controls-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    margin: 0 0 8px 0;
-                    color: #2c3e50;
-                 }
-                 .filter-section {
-                    display: flex;
-                    flex-wrap: wrap;
-                    align-items: center;
-                    gap: 16px;
-                    width: 100%;
-                 }
-                 .action-section {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 8px;
-                    margin-top: 8px;
-                    width: 100%;
-                 }
-                 .filter-group {
-                    display: flex;
-                    align-items: center;
-                    min-width: 200px;
-                    flex: 1;
-                 }
-                 .filter-group label {
-                    white-space: nowrap;
-                    font-weight: 500;
-                    margin-right: 8px;
-                    min-width: 60px;
-                 }
-                 .filter-group input,
-                 .filter-group select {
-                    flex: 1;
-                    min-width: 120px;
-                 }
-                 
-                 /* Button styles */
                  button {
                     padding: 8px 16px;
                     border: none;
@@ -312,17 +371,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     background: #007bff;
                     color: white;
                     cursor: pointer;
-                    transition: all 0.2s;
-                    font-weight: 500;
-                    white-space: nowrap;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
+                    transition: background-color 0.2s;
                  }
                  button:hover {
                     background: #0056b3;
-                    transform: translateY(-1px);
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                  }
                  button.delete-collection {
                     background: #dc3545;
@@ -330,52 +382,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                  button.delete-collection:hover {
                     background: #c82333;
                  }
-                 button.secondary-button {
-                    background: #6c757d;
-                 }
-                 button.secondary-button:hover {
-                    background: #5a6268;
-                 }
-                 
-                 /* Form controls */
                  input, select {
-                    padding: 8px 12px;
+                    padding: 8px;
                     border: 1px solid #ddd;
                     border-radius: 4px;
-                    font-size: 14px;
-                    transition: border-color 0.2s;
                  }
-                 input:focus, select:focus {
-                    border-color: #007bff;
-                    outline: none;
-                    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-                 }
-                 
-                 /* Link list styles */
                  ul { 
                     list-style-type: none; 
                     padding-left: 0; 
                     margin-top: 20px;
-                    border: 1px solid #eee;
-                    border-radius: 4px;
                  }
                  li { 
-                    margin: 0;
-                    padding: 12px;
-                    border-bottom: 1px solid #eee;
+                    margin-bottom: 8px;
+                    padding: 8px;
+                    border: 1px solid #eee;
+                    border-radius: 4px;
                     display: flex;
                     align-items: center;
-                 }
-                 li:last-child {
-                    border-bottom: none;
                  }
                  li:hover {
                     background: #f8f9fa;
                  }
                  li input.link-checkbox {
-                    margin-right: 12px;
-                    min-width: 18px;
-                    height: 18px;
+                    margin-right: 10px;
                  }
                  a { 
                     word-break: break-all;
@@ -386,137 +415,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                  a:hover {
                     text-decoration: underline;
                  }
-                 
-                 /* Feature section styles */
-                 .feature-section {
-                    background-color: #f8f9fa;
-                    border-radius: 8px;
-                    padding: 16px;
-                    margin-bottom: 16px;
-                    border: 1px solid #e9ecef;
-                 }
-                 .feature-section-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    margin: 0 0 12px 0;
-                    color: #2c3e50;
-                 }
-                 
-                 /* Export options section */
-                 #exportOptions {
-                    display: flex;
-                    align-items: center;
-                    flex-wrap: wrap;
-                    gap: 12px;
-                 }
-                 #exportFormat {
-                    min-width: 120px;
-                    flex-grow: 1;
-                 }
-                 
-                 /* Bulk actions section */
-                 .bulk-actions {
-                    margin-top: 24px;
-                    margin-bottom: 24px;
-                    background-color: #f0f8ff;
-                    border-radius: 8px;
-                    border: 1px solid #e0f0ff;
-                 }
-                 .bulk-action-header {
-                    margin: 0 0 16px 0;
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #0056b3;
-                 }
-                 .bulk-actions-content {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 16px;
-                 }
-                 .select-options {
-                    display: flex;
-                    flex-wrap: wrap;
-                    align-items: center;
-                    gap: 16px;
-                    padding-bottom: 12px;
-                    border-bottom: 1px solid #e0f0ff;
-                 }
-                 .select-option {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                 }
-                 .select-option input[type="checkbox"] {
-                    width: 18px;
-                    height: 18px;
-                 }
-                 .bulk-actions-row {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 12px;
-                 }
-                 
-                 /* Collection form */
-                 #saveCollectionForm {
-                    display: flex;
-                    align-items: stretch;
-                    gap: 12px;
-                    margin-top: 24px;
-                    padding: 16px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                    border: 1px solid #e9ecef;
-                 }
-                 #saveCollectionForm input {
-                    flex: 1;
-                    min-width: 200px;
-                 }
-                 
-                 /* Stats indicators */
                  .stats {
                     color: #666;
                     font-size: 14px;
-                    padding: 4px 8px;
-                    background: #f8f9fa;
-                    border-radius: 4px;
-                    border: 1px solid #e9ecef;
                  }
                  .link-meta {
                     color: #666;
-                    font-size: 13px;
+                    font-size: 12px;
                     margin-left: 8px;
                     white-space: nowrap;
-                    background: #f0f0f0;
-                    padding: 2px 6px;
-                    border-radius: 4px;
                  }
-                 
-                 /* Tab styles */
+                 .filter-group {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                 }
+                 .filter-group label {
+                    white-space: nowrap;
+                 }
                  .tabs {
                     display: flex;
                     margin-bottom: 20px;
                     border-bottom: 1px solid #ddd;
-                    background: white;
-                    border-radius: 8px 8px 0 0;
-                    overflow: hidden;
                  }
                  .tab {
-                    padding: 12px 24px;
+                    padding: 10px 20px;
                     cursor: pointer;
+                    border-bottom: 2px solid transparent;
                     transition: all 0.2s;
-                    background: #f8f9fa;
-                    border-right: 1px solid #eee;
-                 }
-                 .tab:last-child {
-                    border-right: none;
-                 }
-                 .tab:hover {
-                    background: #e9ecef;
                  }
                  .tab.active {
-                    background: white;
-                    border-bottom: 3px solid #007bff;
-                    font-weight: 600;
+                    border-bottom: 2px solid #007bff;
+                    font-weight: bold;
                  }
                  .tab-content {
                     display: none;
@@ -524,17 +454,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                  .tab-content.active {
                     display: block;
                  }
-                 
-                 /* Collection item styles */
+                 #saveCollectionForm {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-top: 20px;
+                    padding-top: 20px;
+                    border-top: 1px solid #eee;
+                 }
+                 #saveCollectionForm input {
+                    flex: 1;
+                 }
                  .collection-item {
                     border: 1px solid #eee;
-                    border-radius: 8px;
-                    padding: 16px;
-                    margin-bottom: 16px;
-                    transition: box-shadow 0.2s;
-                 }
-                 .collection-item:hover {
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                    border-radius: 4px;
+                    padding: 15px;
+                    margin-bottom: 10px;
                  }
                  .collection-header {
                     display: flex;
@@ -543,31 +478,61 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                  }
                  .collection-header h3 {
                     margin: 0;
-                    color: #2c3e50;
                  }
                  .collection-meta {
                     color: #666;
                     font-size: 14px;
-                    margin-top: 8px;
+                    margin-top: 5px;
                  }
                  .collection-count {
                     color: #666;
-                    margin-right: 12px;
-                    font-size: 14px;
+                    margin-right: 10px;
                  }
-                 .collection-buttons {
+                 #exportOptions {
+                    margin-top: 20px;
+                    padding: 15px;
+                    background-color: #f8f9fa;
+                    border-radius: 4px;
+                 }
+                 #exportFormat {
+                    margin: 0 10px;
+                 }
+                 .bulk-actions {
+                    margin-top: 15px;
+                    padding: 15px;
+                    background-color: #f0f8ff;
+                    border-radius: 4px;
+                    border: 1px solid #e0f0ff;
+                 }
+                 .bulk-action-header {
+                    margin-top: 0;
+                    margin-bottom: 10px;
+                    font-size: 16px;
+                    color: #0056b3;
+                 }
+                 .bulk-actions-row {
                     display: flex;
-                    gap: 8px;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    margin-bottom: 10px;
                  }
-                 
-                 /* Loading overlay */
+                 .select-options {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                 }
+                 .select-option {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                 }
                  .loading-overlay {
                     position: fixed;
                     top: 0;
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    background-color: rgba(255, 255, 255, 0.9);
+                    background-color: rgba(255, 255, 255, 0.8);
                     display: flex;
                     justify-content: center;
                     align-items: center;
@@ -592,34 +557,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                  }
-                 
-                 /* Responsive design adjustments */
-                 @media (max-width: 768px) {
-                    .header {
-                       flex-direction: column;
-                       align-items: flex-start;
-                       gap: 12px;
-                    }
-                    .filter-group {
-                       width: 100%;
-                    }
-                    #saveCollectionForm {
-                       flex-direction: column;
-                    }
-                    .collection-header {
-                       flex-direction: column;
-                       align-items: flex-start;
-                       gap: 12px;
-                    }
-                    .bulk-actions-row,
-                    .select-options {
-                       flex-direction: column;
-                       align-items: flex-start;
-                    }
-                    button {
-                       width: 100%;
-                    }
-                 }
                </style>
              </head>
              <body>
@@ -634,78 +571,64 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                      <h1>Extracted Links</h1>
                      <span class="stats">Total Links: <span id="linkCount">${processedLinks.length}</span></span>
                    </div>
+                   <div class="controls">
+                     <div class="filter-group">
+                       <label for="filterInput">Search:</label>
+                       <input type="text" id="filterInput" placeholder="Filter by text...">
+                     </div>
+                     <div class="filter-group">
+                       <label for="typeFilter">Type:</label>
+                       <select id="typeFilter">
+                         <option value="">All Types</option>
+                         ${typeOptionsHtml}
+                       </select>
+                     </div>
+                     <div class="filter-group">
+                       <label for="locationFilter">Location:</label>
+                       <select id="locationFilter">
+                         <option value="">All Links</option>
+                         <option value="internal">Internal</option>
+                         <option value="external">External</option>
+                       </select>
+                     </div>
+                     <button onclick="copyAllLinks()">Copy All Links</button>
+                     <button onclick="copyVisibleLinks()">Copy Visible Links</button>
+                     <button onclick="resetFilters()">Reset Filters</button>
+                   </div>
                    
-                   <div class="controls-wrapper">
-                     <div class="feature-section">
-                       <h3 class="feature-section-title">Filter Links</h3>
-                       <div class="controls">
-                         <div class="filter-section">
-                           <div class="filter-group">
-                             <label for="filterInput">Search:</label>
-                             <input type="text" id="filterInput" placeholder="Filter by text...">
-                           </div>
-                           <div class="filter-group">
-                             <label for="typeFilter">Type:</label>
-                             <select id="typeFilter">
-                               <option value="">All Types</option>
-                               ${typeOptionsHtml}
-                             </select>
-                           </div>
-                           <div class="filter-group">
-                             <label for="locationFilter">Location:</label>
-                             <select id="locationFilter">
-                               <option value="">All Links</option>
-                               <option value="internal">Internal</option>
-                               <option value="external">External</option>
-                             </select>
-                           </div>
-                         </div>
-                         <div class="action-section">
-                           <button onclick="copyAllLinks()">Copy All Links</button>
-                           <button onclick="copyVisibleLinks()">Copy Visible Links</button>
-                           <button onclick="resetFilters()" class="secondary-button">Reset Filters</button>
-                         </div>
+                   <div id="exportOptions">
+                     <label for="exportFormat">Export Format:</label>
+                     <select id="exportFormat">
+                       <option value="text">Plain Text</option>
+                       <option value="csv">CSV</option>
+                       <option value="json">JSON</option>
+                       <option value="markdown">Markdown</option>
+                       <option value="html">HTML</option>
+                     </select>
+                     <button onclick="exportLinks()">Export</button>
+                   </div>
+                   
+                   <div class="bulk-actions">
+                     <h3 class="bulk-action-header">Bulk Actions</h3>
+                     
+                     <div class="select-options">
+                       <div class="select-option">
+                         <input type="checkbox" id="selectAllLinks" onchange="toggleSelectAll()">
+                         <label for="selectAllLinks">Select All</label>
+                       </div>
+                       <div class="select-option">
+                         <button onclick="selectByType()">Select By Type</button>
+                       </div>
+                       <div class="select-option">
+                         <button onclick="invertSelection()">Invert Selection</button>
                        </div>
                      </div>
                      
-                     <div class="feature-section">
-                       <h3 class="feature-section-title">Export Options</h3>
-                       <div id="exportOptions">
-                         <label for="exportFormat">Format:</label>
-                         <select id="exportFormat">
-                           <option value="text">Plain Text</option>
-                           <option value="csv">CSV</option>
-                           <option value="json">JSON</option>
-                           <option value="markdown">Markdown</option>
-                           <option value="html">HTML</option>
-                         </select>
-                         <button onclick="exportLinks()">Export</button>
-                       </div>
-                     </div>
-                   </div>
-                   
-                   <div class="bulk-actions feature-section">
-                     <h3 class="bulk-action-header">Bulk Actions</h3>
-                     <div class="bulk-actions-content">
-                       <div class="select-options">
-                         <div class="select-option">
-                           <input type="checkbox" id="selectAllLinks" onchange="toggleSelectAll()">
-                           <label for="selectAllLinks">Select All</label>
-                         </div>
-                         <div class="select-option">
-                           <button onclick="selectByType()">Select By Type</button>
-                         </div>
-                         <div class="select-option">
-                           <button onclick="invertSelection()" class="secondary-button">Invert Selection</button>
-                         </div>
-                       </div>
-                       
-                       <div class="bulk-actions-row">
-                         <button onclick="openSelectedLinks()">Open Selected Links</button>
-                         <button onclick="copySelectedLinks()">Copy Selected Links</button>
-                         <button onclick="downloadSelectedFiles()">Download Selected Files</button>
-                         <button onclick="addSelectedToBookmarks()">Add To Bookmarks</button>
-                       </div>
+                     <div class="bulk-actions-row">
+                       <button onclick="openSelectedLinks()">Open Selected Links</button>
+                       <button onclick="copySelectedLinks()">Copy Selected Links</button>
+                       <button onclick="downloadSelectedFiles()">Download Selected Files</button>
+                       <button onclick="addSelectedToBookmarks()">Add Selected to Bookmarks</button>
                      </div>
                    </div>
                    
@@ -1276,3 +1199,362 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
      }
      return true; // Required for asynchronous sendResponse
 });
+</file>
+
+<file path="content.js">
+(() => {
+     // Prevent multiple injections running simultaneously
+     if (window.isLinkExtractorDrawingActive) {
+          console.log("Link Extractor: Drawing is already active.");
+          return;
+     }
+     window.isLinkExtractorDrawingActive = true;
+
+     let startX, startY, selectionDiv, overlayDiv, countIndicator;
+     let isDrawing = false;
+     const originalCursor = document.body.style.cursor;
+     let highlightedLinks = new Set(); // Track currently highlighted links
+
+     function createOverlay() {
+          const div = document.createElement('div');
+          div.style.position = 'fixed';
+          div.style.top = '0';
+          div.style.left = '0';
+          div.style.width = '100%';
+          div.style.height = '100%';
+          div.style.backgroundColor = 'rgba(0, 0, 0, 0.4)'; // Darker grey overlay
+          div.style.zIndex = '2147483646'; // Just below the selection div
+          div.style.pointerEvents = 'none';
+          document.body.appendChild(div);
+          return div;
+     }
+
+     function createSelectionDiv() {
+          const div = document.createElement('div');
+          div.style.position = 'fixed';
+          div.style.border = '2px dashed #007bff';
+          div.style.backgroundColor = 'transparent'; // Make selection area transparent
+          div.style.zIndex = '2147483647';
+          div.style.pointerEvents = 'none';
+          div.style.mixBlendMode = 'normal'; // Ensures the selection area stays white
+          document.body.appendChild(div);
+          return div;
+     }
+
+     function createCountIndicator() {
+          const div = document.createElement('div');
+          div.style.position = 'fixed';
+          div.style.backgroundColor = '#007bff';
+          div.style.color = 'white';
+          div.style.padding = '4px 8px';
+          div.style.borderRadius = '12px';
+          div.style.fontSize = '12px';
+          div.style.fontWeight = 'bold';
+          div.style.zIndex = '2147483647';
+          div.style.pointerEvents = 'none';
+          div.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+          div.style.transition = 'transform 0.1s ease-out';
+          div.textContent = '0 links';
+          div.style.display = 'none'; // Initially hidden
+          document.body.appendChild(div);
+          return div;
+     }
+
+     function highlightLink(link) {
+          if (!highlightedLinks.has(link)) {
+               link.style.transition = 'all 0.1s ease-in-out';
+               link.style.backgroundColor = 'rgba(0, 123, 255, 0.3)';
+               link.style.borderRadius = '2px';
+               link.style.outline = '2px solid #007bff';
+               highlightedLinks.add(link);
+          }
+     }
+
+     function unhighlightLink(link) {
+          if (highlightedLinks.has(link)) {
+               link.style.backgroundColor = '';
+               link.style.outline = '';
+               link.style.transition = '';
+               highlightedLinks.delete(link);
+          }
+     }
+
+     function updateLinkHighlights(selectionRect) {
+          const allLinks = document.querySelectorAll('a[href]');
+          const currentlySelected = new Set();
+
+          allLinks.forEach(link => {
+               const linkRect = link.getBoundingClientRect();
+               const style = window.getComputedStyle(link);
+               const isVisible = style.display !== 'none' &&
+                    style.visibility !== 'hidden' &&
+                    style.opacity !== '0' &&
+                    linkRect.width > 0 &&
+                    linkRect.height > 0;
+
+               if (!isVisible) return;
+
+               const overlaps = !(
+                    selectionRect.right < linkRect.left ||
+                    selectionRect.left > linkRect.right ||
+                    selectionRect.bottom < linkRect.top ||
+                    selectionRect.top > linkRect.bottom
+               );
+
+               if (overlaps) {
+                    currentlySelected.add(link);
+                    highlightLink(link);
+               } else if (highlightedLinks.has(link)) {
+                    unhighlightLink(link);
+               }
+          });
+
+          // Remove highlights from links that are no longer selected
+          highlightedLinks.forEach(link => {
+               if (!currentlySelected.has(link)) {
+                    unhighlightLink(link);
+               }
+          });
+
+          // Update count indicator
+          updateCountIndicator(currentlySelected.size);
+     }
+
+     function updateCountIndicator(count) {
+          if (!countIndicator) return;
+
+          countIndicator.style.display = count > 0 ? 'block' : 'none';
+          countIndicator.textContent = count + (count === 1 ? ' link' : ' links');
+
+          // Scale animation effect when count changes
+          countIndicator.style.transform = 'scale(1.1)';
+          setTimeout(() => {
+               if (countIndicator) countIndicator.style.transform = 'scale(1)';
+          }, 100);
+     }
+
+     function positionCountIndicator(x, y) {
+          if (!countIndicator) return;
+
+          // Position above and to the right of the cursor
+          countIndicator.style.left = `${x + 10}px`;
+          countIndicator.style.top = `${y - 30}px`;
+     }
+
+     function clearAllHighlights() {
+          highlightedLinks.forEach(link => unhighlightLink(link));
+          highlightedLinks.clear();
+     }
+
+     function onMouseDown(e) {
+          if (e.button !== 0) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          isDrawing = true;
+          startX = e.clientX;
+          startY = e.clientY;
+
+          // Create overlay first
+          overlayDiv = createOverlay();
+
+          if (selectionDiv) selectionDiv.remove();
+          selectionDiv = createSelectionDiv();
+          selectionDiv.style.left = `${startX}px`;
+          selectionDiv.style.top = `${startY}px`;
+          selectionDiv.style.width = '0px';
+          selectionDiv.style.height = '0px';
+
+          // Create count indicator
+          if (countIndicator) countIndicator.remove();
+          countIndicator = createCountIndicator();
+          positionCountIndicator(startX, startY);
+
+          document.addEventListener('mousemove', onMouseMove, true);
+          document.addEventListener('mouseup', onMouseUp, true);
+     }
+
+     function onMouseMove(e) {
+          if (!isDrawing) return;
+          e.preventDefault();
+          e.stopPropagation();
+
+          const currentX = e.clientX;
+          const currentY = e.clientY;
+
+          const newLeft = Math.min(currentX, startX);
+          const newTop = Math.min(currentY, startY);
+          const width = Math.abs(currentX - startX);
+          const height = Math.abs(currentY - startY);
+
+          selectionDiv.style.left = `${newLeft}px`;
+          selectionDiv.style.top = `${newTop}px`;
+          selectionDiv.style.width = `${width}px`;
+          selectionDiv.style.height = `${height}px`;
+
+          // Position count indicator at the cursor position
+          positionCountIndicator(e.clientX, e.clientY);
+
+          // Update link highlights based on current selection rectangle
+          updateLinkHighlights({
+               left: newLeft,
+               top: newTop,
+               right: newLeft + width,
+               bottom: newTop + height
+          });
+     }
+
+     function onMouseUp(e) {
+          if (!isDrawing) return;
+          if (e.button !== 0 && selectionDiv) {
+               return;
+          }
+
+          isDrawing = false;
+          e.preventDefault();
+          e.stopPropagation();
+
+          document.removeEventListener('mousemove', onMouseMove, true);
+          document.removeEventListener('mouseup', onMouseUp, true);
+          document.removeEventListener('mousedown', onMouseDown, true);
+          document.body.style.cursor = originalCursor;
+
+          // Remove highlights before removing divs
+          clearAllHighlights();
+
+          if (overlayDiv) {
+               overlayDiv.remove();
+               overlayDiv = null;
+          }
+
+          if (countIndicator) {
+               countIndicator.remove();
+               countIndicator = null;
+          }
+
+          if (selectionDiv) {
+               const rect = selectionDiv.getBoundingClientRect();
+               selectionDiv.remove();
+               selectionDiv = null;
+
+               if (rect.width > 0 && rect.height > 0) {
+                    extractLinksInRegion(rect);
+               } else {
+                    console.log("Selection area was too small.");
+                    if (chrome.runtime && chrome.runtime.sendMessage) {
+                         chrome.runtime.sendMessage({ action: "extractedLinks", links: [] });
+                    }
+               }
+          }
+          window.isLinkExtractorDrawingActive = false;
+     }
+
+     function extractLinksInRegion(selectionRect) {
+          const allLinks = document.querySelectorAll('a[href]');
+          const extractedLinks = new Set(); // Use a Set to automatically handle duplicates
+
+          allLinks.forEach(link => {
+               const linkRect = link.getBoundingClientRect();
+
+               // Check for visibility and non-zero size
+               const style = window.getComputedStyle(link);
+               const isVisible = style.display !== 'none' &&
+                    style.visibility !== 'hidden' &&
+                    style.opacity !== '0' &&
+                    linkRect.width > 0 &&
+                    linkRect.height > 0;
+
+               if (!isVisible) return;
+
+               // Check if the link's rectangle overlaps with the selection rectangle
+               const overlaps = !(
+                    selectionRect.right < linkRect.left ||
+                    selectionRect.left > linkRect.right ||
+                    selectionRect.bottom < linkRect.top ||
+                    selectionRect.top > linkRect.bottom
+               );
+
+               if (overlaps && link.href) {
+                    extractedLinks.add(link.href);
+               }
+          });
+
+          if (chrome.runtime && chrome.runtime.sendMessage) {
+               chrome.runtime.sendMessage({ action: "extractedLinks", links: Array.from(extractedLinks) });
+          } else {
+               console.error("Cannot send message to background script.");
+               alert("Extracted Links:\n" + Array.from(extractedLinks).join("\n"));
+          }
+     }
+
+     // Start listening for the first mousedown to initiate drawing
+     document.body.style.cursor = 'crosshair';
+     document.addEventListener('mousedown', onMouseDown, { capture: true, once: true });
+     // `once: true` means this listener will be removed after the first mousedown.
+     // `capture: true` helps catch the event before other elements on the page.
+
+     // Optional: Add an escape key listener to cancel drawing
+     function cancelDrawing(e) {
+          if (e.key === "Escape") {
+               if (isDrawing || window.isLinkExtractorDrawingActive) { // Check if drawing has started or is armed
+                    isDrawing = false;
+                    clearAllHighlights();
+                    if (selectionDiv) selectionDiv.remove();
+                    if (overlayDiv) overlayDiv.remove();
+                    if (countIndicator) countIndicator.remove();
+                    document.removeEventListener('mousemove', onMouseMove, true);
+                    document.removeEventListener('mouseup', onMouseUp, true);
+                    document.removeEventListener('mousedown', onMouseDown, true); // Also remove the initial mousedown listener if it wasn't triggered
+                    document.removeEventListener('keydown', cancelDrawing, true); // Remove self
+                    document.body.style.cursor = originalCursor;
+                    window.isLinkExtractorDrawingActive = false;
+                    console.log("Link extraction cancelled by Escape key.");
+               }
+          }
+     }
+     document.addEventListener('keydown', cancelDrawing, { capture: true });
+
+})();
+</file>
+
+<file path="manifest.json">
+{
+     "manifest_version": 3,
+     "name": "PistonPry",
+     "version": "1.0",
+     "description": "Draw a rectangle on a webpage to extract links within that region.",
+     "permissions": [
+       "activeTab",
+       "scripting",
+       "storage"
+     ],
+     "action": {
+       "default_title": "Extract Links by Region",
+       "default_icon": {
+         "16": "images/icon16.png",
+         "48": "images/icon48.png",
+         "128": "images/icon120.png"
+       }
+     },
+     "icons": {
+       "16": "images/icon16.png",
+       "48": "images/icon48.png",
+       "128": "images/icon120.png"
+     },
+     "background": {
+       "service_worker": "background.js"
+     },
+     "commands": {
+       "_execute_action": {
+         "suggested_key": {
+           "default": "Alt+L",
+           "mac": "Command+L"
+         },
+         "description": "Activate link extraction tool"
+       }
+     }
+}
+</file>
+
+</files>
