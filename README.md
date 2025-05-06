@@ -8,6 +8,11 @@ A Chrome extension that allows you to extract links from specific regions of a w
 - Automatically extract all links within the selected region
 - Simple and intuitive user interface
 - Works on any webpage with active tab permissions
+- Copy all extracted links to clipboard with one click
+- Filter links by domain or text content
+- Filter to show only valid links
+- Track total number of extracted/filtered links
+- Modern, clean results page design
 
 ## Installation
 
@@ -21,6 +26,11 @@ A Chrome extension that allows you to extract links from specific regions of a w
 1. Click the PistonPry icon in your Chrome toolbar
 2. Click and drag on any webpage to draw a rectangle
 3. Release to automatically extract all links within the selected region
+4. In the results page:
+   - Use the search box to filter links by domain or text
+   - Click "Copy All Links" to copy all links to clipboard
+   - Click "Show Valid Links" to filter out invalid URLs
+   - View the total number of links at the top of the page
 
 ## Permissions
 

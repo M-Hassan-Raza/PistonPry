@@ -32,15 +32,142 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
              <head>
                <title>Extracted Links</title>
                <style>
-                 body { font-family: sans-serif; padding: 20px; }
-                 ul { list-style-type: none; padding-left: 0; }
-                 li { margin-bottom: 8px; }
-                 a { word-break: break-all; }
+                 body { 
+                    font-family: system-ui, -apple-system, sans-serif; 
+                    padding: 20px; 
+                    max-width: 1200px; 
+                    margin: 0 auto; 
+                    background: #f5f5f5;
+                 }
+                 .container {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                 }
+                 .header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                 }
+                 .controls {
+                    display: flex;
+                    gap: 10px;
+                    margin-bottom: 20px;
+                 }
+                 button {
+                    padding: 8px 16px;
+                    border: none;
+                    border-radius: 4px;
+                    background: #007bff;
+                    color: white;
+                    cursor: pointer;
+                 }
+                 button:hover {
+                    background: #0056b3;
+                 }
+                 input {
+                    padding: 8px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    width: 200px;
+                 }
+                 ul { 
+                    list-style-type: none; 
+                    padding-left: 0; 
+                    margin-top: 20px;
+                 }
+                 li { 
+                    margin-bottom: 8px;
+                    padding: 8px;
+                    border: 1px solid #eee;
+                    border-radius: 4px;
+                 }
+                 li:hover {
+                    background: #f8f9fa;
+                 }
+                 a { 
+                    word-break: break-all;
+                    color: #0066cc;
+                    text-decoration: none;
+                 }
+                 a:hover {
+                    text-decoration: underline;
+                 }
+                 .stats {
+                    color: #666;
+                    font-size: 14px;
+                 }
                </style>
              </head>
              <body>
-               <h1>Extracted Links</h1>
-               <ul>${linksHtml}</ul>
+               <div class="container">
+                 <div class="header">
+                   <h1>Extracted Links</h1>
+                   <span class="stats">Total Links: <span id="linkCount">${request.links.length}</span></span>
+                 </div>
+                 <div class="controls">
+                   <input type="text" id="filterInput" placeholder="Filter by domain or text...">
+                   <button onclick="copyAllLinks()">Copy All Links</button>
+                   <button onclick="filterValidLinks()">Show Valid Links</button>
+                 </div>
+                 <ul id="linksList">${linksHtml}</ul>
+               </div>
+
+               <script>
+                 // Copy all links to clipboard
+                 function copyAllLinks() {
+                   const links = Array.from(document.querySelectorAll('a')).map(a => a.href).join('\\n');
+                   navigator.clipboard.writeText(links).then(() => {
+                     alert('All links copied to clipboard!');
+                   }).catch(err => {
+                     console.error('Failed to copy links: ', err);
+                   });
+                 }
+
+                 // Filter links based on input
+                 document.getElementById('filterInput').addEventListener('input', (e) => {
+                   const filter = e.target.value.toLowerCase();
+                   const items = document.querySelectorAll('li');
+                   let count = 0;
+                   
+                   items.forEach(item => {
+                     const link = item.textContent.toLowerCase();
+                     if (link.includes(filter)) {
+                       item.style.display = '';
+                       count++;
+                     } else {
+                       item.style.display = 'none';
+                     }
+                   });
+                   
+                   document.getElementById('linkCount').textContent = count;
+                 });
+
+                 // Filter valid links (basic check)
+                 function filterValidLinks() {
+                   const items = document.querySelectorAll('li a');
+                   let count = 0;
+                   
+                   items.forEach(async (link) => {
+                     const li = link.parentElement;
+                     try {
+                       const url = new URL(link.href);
+                       if (url.protocol === 'http:' || url.protocol === 'https:') {
+                         li.style.display = '';
+                         count++;
+                       } else {
+                         li.style.display = 'none';
+                       }
+                     } catch (e) {
+                       li.style.display = 'none';
+                     }
+                   });
+                   
+                   document.getElementById('linkCount').textContent = count;
+                 }
+               </script>
              </body>
            </html>`;
                chrome.tabs.create({ url: 'data:text/html;charset=UTF-8,' + encodeURIComponent(newTabContent) });
