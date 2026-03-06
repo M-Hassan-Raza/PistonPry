@@ -1765,20 +1765,25 @@ render(links);
     viewFlatBtn.addEventListener('click', () => setGroupedView(false));
     viewGroupedBtn.addEventListener('click', () => setGroupedView(true));
 
-    // Feature 10: Sort buttons
+    // Feature 10: Sort buttons — store original labels
     $$('.pp-sort-btn').forEach(btn => {
+      btn.dataset.label = btn.textContent.trim();
       btn.addEventListener('click', () => {
         const field = btn.dataset.sort;
-        if (sortField === field) {
+        if (sortField === field && field !== 'none') {
           sortDir = sortDir === 'asc' ? 'desc' : 'asc';
         } else {
           sortField = field;
           sortDir = 'asc';
         }
-        $$('.pp-sort-btn').forEach(b => b.classList.remove('active'));
+        // Reset all button labels, then set active
+        $$('.pp-sort-btn').forEach(b => {
+          b.classList.remove('active');
+          b.textContent = b.dataset.label;
+        });
         btn.classList.add('active');
         if (sortField !== 'none') {
-          btn.textContent = btn.dataset.sort.charAt(0).toUpperCase() + btn.dataset.sort.slice(1) +
+          btn.textContent = btn.dataset.label +
             (sortDir === 'asc' ? ' \u25B2' : ' \u25BC');
         }
         renderCurrentView();
