@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PistonPry — Extracted Links</title>
-  <link rel="stylesheet" href="results.css">
 </head>
 <body>
   <a href="#linksList" class="pp-skip-link">Skip to links</a>
@@ -50,16 +49,16 @@
         </div>
       </div>
 
-      <!-- Domain Stats Bar (Feature 19) -->
+      <!-- Domain Stats Bar -->
       <div class="pp-stats-bar" id="domainStatsBar" hidden></div>
 
-      <!-- Smart Grouping Suggestions (Feature 21) -->
+      <!-- Smart Grouping Suggestions -->
       <div class="pp-suggestions" id="suggestionsBar" hidden></div>
 
-      <!-- Link Health Summary (Feature 9) -->
+      <!-- Link Health Summary -->
       <div class="pp-health-summary" id="healthSummary" hidden></div>
 
-      <!-- Type sub-tabs for links/images/emails (Feature 4) -->
+      <!-- Type sub-tabs -->
       <div class="pp-type-tabs" id="typeTabs">
         <button class="pp-type-tab active" data-item-type="all">All <span class="pp-type-tab-count" id="countAll">0</span></button>
         <button class="pp-type-tab" data-item-type="link">Links <span class="pp-type-tab-count" id="countLinks">0</span></button>
@@ -89,7 +88,7 @@
         <button class="pp-btn pp-btn--ghost pp-btn--sm pp-reset-btn" id="resetFiltersBtn" hidden>Clear filters</button>
       </div>
 
-      <!-- View toggle (Feature 7) -->
+      <!-- View toggle -->
       <div class="pp-view-controls">
         <button class="pp-view-btn active" id="viewFlat" title="Flat list view">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -97,7 +96,7 @@
         <button class="pp-view-btn" id="viewGrouped" title="Group by domain">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/></svg>
         </button>
-        <!-- Sort controls (Feature 10) -->
+        <!-- Sort controls -->
         <div class="pp-sort-controls">
           <span class="pp-sort-label">Sort:</span>
           <button class="pp-sort-btn active" data-sort="none">Default</button>
@@ -148,12 +147,12 @@
           <button class="pp-btn pp-btn--secondary pp-btn--sm" id="diffCollectionsBtn" hidden>Compare Selected</button>
         </div>
       </div>
-      <!-- Tag filter (Feature 15) -->
+      <!-- Tag filter -->
       <div class="pp-tag-filter" id="tagFilterBar" hidden></div>
       <div id="collectionsContainer"></div>
     </div>
 
-    <!-- History panel (Feature 14) -->
+    <!-- History panel -->
     <div role="tabpanel" class="pp-panel" id="panel-history" aria-labelledby="tab-history" hidden>
       <div class="pp-header">
         <h1 class="pp-title">Extraction History</h1>
@@ -175,7 +174,7 @@
     </div>
   </dialog>
 
-  <!-- Import dialog (Feature 23) -->
+  <!-- Import dialog -->
   <dialog class="pp-dialog pp-dialog--wide" id="importDialog">
     <div class="pp-dialog-title">Import Links</div>
     <div class="pp-dialog-message">Paste URLs (one per line)</div>
@@ -187,7 +186,7 @@
     </div>
   </dialog>
 
-  <!-- Diff dialog (Feature 17) -->
+  <!-- Diff dialog -->
   <dialog class="pp-dialog pp-dialog--wide" id="diffDialog">
     <div class="pp-dialog-title" id="diffTitle">Collection Comparison</div>
     <div id="diffContent" class="pp-diff-content"></div>
@@ -196,7 +195,7 @@
     </div>
   </dialog>
 
-  <!-- Keyboard shortcuts help (Feature 24) -->
+  <!-- Keyboard shortcuts help -->
   <dialog class="pp-dialog pp-dialog--wide" id="shortcutsDialog">
     <div class="pp-dialog-title">Keyboard Shortcuts</div>
     <div class="pp-shortcuts-grid">
@@ -217,10 +216,9 @@
     </div>
   </dialog>
 
-  <!-- Type selector popover (anchored near button on demand) -->
+  <!-- Type selector popover -->
   <div class="pp-type-popover" id="typePopover"></div>
 
-  <script src="utils.js"></script>
-  <script src="results.js"></script>
+  <script type="module" src="/src/results/index.js"></script>
 </body>
 </html>

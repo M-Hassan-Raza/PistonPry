@@ -1,0 +1,195 @@
+/* ── Buttons ── */
+.pp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: var(--pp-radius-md);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+  font-family: var(--pp-font-sans);
+  line-height: 1.4;
+}
+
+.pp-btn:focus-visible {
+  outline: 2px solid var(--pp-border-focus);
+  outline-offset: 2px;
+}
+
+.pp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pp-btn--primary {
+  background: var(--pp-accent);
+  color: var(--pp-text-inverse);
+}
+
+.pp-btn--primary:hover {
+  background: var(--pp-accent-hover);
+}
+
+.pp-btn--secondary {
+  background: transparent;
+  color: var(--pp-text-secondary);
+  border: 1px solid var(--pp-border-default);
+}
+
+.pp-btn--secondary:hover {
+  background: var(--pp-bg-subtle);
+  color: var(--pp-text-primary);
+}
+
+.pp-btn--ghost {
+  background: transparent;
+  color: var(--pp-text-secondary);
+}
+
+.pp-btn--ghost:hover {
+  background: var(--pp-bg-subtle);
+  color: var(--pp-text-primary);
+}
+
+.pp-btn--ghost.active {
+  background: var(--pp-accent-subtle);
+  color: var(--pp-accent);
+}
+
+.pp-btn--danger {
+  background: var(--pp-error);
+  color: var(--pp-text-inverse);
+}
+
+.pp-btn--danger:hover {
+  background: var(--pp-error-hover);
+}
+
+.pp-btn--sm {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+
+/* ── Inline copy feedback ── */
+.pp-btn--copied {
+  background: var(--pp-success);
+  pointer-events: none;
+}
+
+/* ── Checkbox ── */
+.pp-checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--pp-border-default);
+  border-radius: var(--pp-radius-sm);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.pp-checkbox:checked {
+  background: var(--pp-accent);
+  border-color: var(--pp-accent);
+}
+
+.pp-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 6px;
+  height: 10px;
+  border: solid var(--pp-text-inverse);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.pp-checkbox:indeterminate {
+  background: var(--pp-accent);
+  border-color: var(--pp-accent);
+}
+
+.pp-checkbox:indeterminate::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 6px;
+  width: 8px;
+  height: 2px;
+  background: var(--pp-text-inverse);
+}
+
+.pp-checkbox:focus-visible {
+  outline: 2px solid var(--pp-border-focus);
+  outline-offset: 2px;
+}
+
+/* ── Type pills ── */
+.pp-type-pill {
+  display: inline-flex;
+  padding: 1px 8px;
+  border-radius: var(--pp-radius-pill);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: var(--pp-bg-subtle);
+  color: var(--pp-text-secondary);
+}
+
+.pp-type-pill[data-type="image"] { background: #fef3c7; color: #92400e; }
+.pp-type-pill[data-type="pdf"] { background: #fee2e2; color: #991b1b; }
+.pp-type-pill[data-type="document"] { background: #dbeafe; color: #1e40af; }
+.pp-type-pill[data-type="video"] { background: #ede9fe; color: #5b21b6; }
+.pp-type-pill[data-type="audio"] { background: #d1fae5; color: #065f46; }
+.pp-type-pill[data-type="youtube"] { background: #fee2e2; color: #991b1b; }
+.pp-type-pill[data-type="archive"] { background: #f3e8ff; color: #6b21a8; }
+.pp-type-pill[data-type="email"] { background: #dbeafe; color: #1e40af; }
+.pp-type-pill[data-type="phone"] { background: #d1fae5; color: #065f46; }
+
+@media (prefers-color-scheme: dark) {
+  .pp-type-pill[data-type="image"] { background: #422006; color: #fcd34d; }
+  .pp-type-pill[data-type="pdf"] { background: #450a0a; color: #fca5a5; }
+  .pp-type-pill[data-type="document"] { background: #172554; color: #93c5fd; }
+  .pp-type-pill[data-type="video"] { background: #2e1065; color: #c4b5fd; }
+  .pp-type-pill[data-type="audio"] { background: #022c22; color: #6ee7b7; }
+  .pp-type-pill[data-type="youtube"] { background: #450a0a; color: #fca5a5; }
+  .pp-type-pill[data-type="archive"] { background: #3b0764; color: #d8b4fe; }
+  .pp-type-pill[data-type="email"] { background: #172554; color: #93c5fd; }
+  .pp-type-pill[data-type="phone"] { background: #022c22; color: #6ee7b7; }
+}
+
+.pp-external-badge {
+  display: inline-flex;
+  padding: 1px 6px;
+  border-radius: var(--pp-radius-pill);
+  font-size: 0.68rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: var(--pp-bg-subtle);
+  color: var(--pp-text-tertiary);
+}
+
+/* Duplicate badge */
+.pp-dup-badge {
+  display: inline-flex;
+  padding: 1px 6px;
+  border-radius: var(--pp-radius-pill);
+  font-size: 0.68rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: var(--pp-warning);
+  color: var(--pp-text-inverse);
+  opacity: 0.8;
+}

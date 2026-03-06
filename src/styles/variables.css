@@ -1,0 +1,111 @@
+/* ── PistonPry Design System ── */
+
+/* ── LIGHT MODE (default) ── */
+:root {
+  --pp-bg-root: #f5f3ef;
+  --pp-bg-surface: #ffffff;
+  --pp-bg-subtle: #edeae5;
+  --pp-bg-hover: #e8e5e0;
+  --pp-bg-selected: #e9e6f5;
+  --pp-border-default: #ddd9d3;
+  --pp-border-subtle: #ece9e4;
+  --pp-border-focus: #6366f1;
+  --pp-text-primary: #1a1a1a;
+  --pp-text-secondary: #4a4540;
+  --pp-text-tertiary: #9a958e;
+  --pp-text-inverse: #ffffff;
+  --pp-text-link: #4f46e5;
+  --pp-accent: #4f46e5;
+  --pp-accent-hover: #4338ca;
+  --pp-accent-subtle: #eef2ff;
+  --pp-accent-ring: rgba(79, 70, 229, 0.15);
+  --pp-success: #16a34a;
+  --pp-error: #dc2626;
+  --pp-error-hover: #b91c1c;
+  --pp-warning: #d97706;
+  --pp-info: #2563eb;
+  --pp-shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --pp-shadow-md: 0 2px 8px rgba(0,0,0,0.06);
+  --pp-shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+  --pp-shadow-toast: 0 8px 32px rgba(0,0,0,0.12);
+  --pp-radius-sm: 4px;
+  --pp-radius-md: 8px;
+  --pp-radius-lg: 12px;
+  --pp-radius-pill: 100px;
+  --pp-font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  --pp-font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ── DARK MODE ── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pp-bg-root: #1a1a1a;
+    --pp-bg-surface: #242424;
+    --pp-bg-subtle: #2e2e2e;
+    --pp-bg-hover: #363636;
+    --pp-bg-selected: #2a2840;
+    --pp-border-default: #3a3a3a;
+    --pp-border-subtle: #2e2e2e;
+    --pp-border-focus: #818cf8;
+    --pp-text-primary: #f0ece6;
+    --pp-text-secondary: #b5b0a8;
+    --pp-text-tertiary: #6e6a63;
+    --pp-text-inverse: #1a1a1a;
+    --pp-text-link: #a5b4fc;
+    --pp-accent: #818cf8;
+    --pp-accent-hover: #a5b4fc;
+    --pp-accent-subtle: #2a2840;
+    --pp-accent-ring: rgba(129, 140, 248, 0.2);
+    --pp-success: #4ade80;
+    --pp-error: #f87171;
+    --pp-error-hover: #fca5a5;
+    --pp-warning: #fbbf24;
+    --pp-info: #60a5fa;
+    --pp-shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+    --pp-shadow-md: 0 2px 8px rgba(0,0,0,0.3);
+    --pp-shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+    --pp-shadow-toast: 0 8px 32px rgba(0,0,0,0.5);
+  }
+}
+
+/* ── Reset & Base ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--pp-font-sans);
+  background: var(--pp-bg-root);
+  color: var(--pp-text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Skip link ── */
+.pp-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999;
+  padding: 8px 16px;
+  background: var(--pp-accent);
+  color: var(--pp-text-inverse);
+  border-radius: var(--pp-radius-sm);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.pp-skip-link:focus {
+  left: 16px;
+  top: 16px;
+}

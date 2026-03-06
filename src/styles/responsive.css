@@ -1,0 +1,81 @@
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .pp-shell {
+    padding: 16px 12px;
+  }
+
+  .pp-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pp-source-link {
+    max-width: 100%;
+  }
+
+  .pp-header-actions {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .pp-header-actions .pp-btn {
+    flex: 1;
+  }
+
+  .pp-filters {
+    flex-direction: column;
+  }
+
+  .pp-search-wrap {
+    min-width: 100%;
+  }
+
+  .pp-pattern-wrap {
+    min-width: 100%;
+  }
+
+  .pp-view-controls {
+    flex-wrap: wrap;
+  }
+
+  .pp-sort-controls {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+
+  .pp-action-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pp-action-buttons {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .pp-action-buttons .pp-btn {
+    flex: 1;
+  }
+
+  .pp-save-form {
+    flex-direction: column;
+  }
+
+  .pp-save-form .pp-btn {
+    width: 100%;
+  }
+
+  .pp-collection-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pp-collection-actions {
+    margin-left: 0;
+  }
+
+  .pp-type-tabs {
+    flex-wrap: wrap;
+  }
+}
