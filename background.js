@@ -1,1278 +1,270 @@
-// Listen for when the user clicks the extension's browser action icon
-chrome.action.onClicked.addListener((tab) => {
-     // Ensure the tab has a URL and it's an http/https page
-     if (tab.url && (tab.url.startsWith("http://") || tab.url.startsWith("https://"))) {
-          // Execute the content script in the current tab
-          chrome.scripting.executeScript({
-               target: { tabId: tab.id },
-               files: ['content.js']
-          }).catch(err => console.error("Failed to inject content script: ", err));
-     } else {
-          console.log("Link Extractor: Cannot inject script into this page (e.g., chrome:// pages, file URLs without permission, or empty tabs).");
-          // Optionally, you could try to alert the user or log this more visibly.
-          // For instance, by trying to execute a simple alert script:
-          chrome.scripting.executeScript({
-               target: { tabId: tab.id },
-               func: () => {
-                    alert("This extension cannot run on the current page (e.g., system pages like chrome:// or the web store). Please try on a regular website.");
-               }
-          }).catch(err => console.error("Failed to show page restriction alert: ", err));
-     }
+// ── PistonPry service worker ──
+
+importScripts('utils.js');
+
+// ── Context Menu (Feature 2) ──
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: 'extract-section',
+    title: 'Extract links from this section',
+    contexts: ['all'],
+  });
 });
 
-// Helper function to save a collection to storage
-function saveLinkCollection(name, links, sourceUrl) {
-     return new Promise((resolve, reject) => {
-          chrome.storage.local.get(['linkCollections'], (result) => {
-               const collections = result.linkCollections || [];
-               const timestamp = new Date().toISOString();
+// ── Context menu click handler ──
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId !== 'extract-section') return;
+  if (!tab?.id || !tab.url?.startsWith('http')) return;
 
-               // Create a new collection
-               const newCollection = {
-                    id: Date.now().toString(),
-                    name,
-                    links,
-                    sourceUrl,
-                    timestamp,
-                    count: links.length
-               };
+  try {
+    // Set the context position, then inject content script
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: (x, y) => {
+        window.__pistonpryMode = 'contextMenu';
+        window.__pistonpryContextX = x;
+        window.__pistonpryContextY = y;
+        window.__pistonpryExtractTypes = ['links', 'images', 'emails'];
+      },
+      args: [info.x || 0, info.y || 0],
+    });
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['content.js'],
+    });
+  } catch (err) {
+    console.error('Context menu extraction failed:', err);
+  }
+});
 
-               collections.push(newCollection);
+// ── Inject content script on action click (draw mode) ──
+chrome.action.onClicked.addListener(async (tab) => {
+  if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+    try {
+      // Clear any previous mode flags
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          window.__pistonpryMode = 'draw';
+          window.__pistonpryExtractTypes = ['links', 'images', 'emails'];
+        },
+      });
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content.js'],
+      });
+    } catch (err) {
+      console.error('Failed to inject content script:', err);
+    }
+  } else {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: showPageNotification,
+        args: ['PistonPry cannot run on this page. Try a regular website.'],
+      });
+    } catch (err) {
+      console.error('Cannot notify on this page:', err);
+    }
+  }
+});
 
-               chrome.storage.local.set({ linkCollections: collections }, () => {
-                    if (chrome.runtime.lastError) {
-                         reject(chrome.runtime.lastError);
-                    } else {
-                         resolve(newCollection);
-                    }
-               });
-          });
-     });
-}
+// ── Keyboard command: full-page extract (Feature 1) ──
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command !== 'extract_all') return;
 
-// Helper function to get all saved collections
-function getAllCollections() {
-     return new Promise((resolve) => {
-          chrome.storage.local.get(['linkCollections'], (result) => {
-               resolve(result.linkCollections || []);
-          });
-     });
-}
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id || !tab.url?.startsWith('http')) return;
 
-// Helper function to delete a collection
-function deleteCollection(collectionId) {
-     return new Promise((resolve, reject) => {
-          chrome.storage.local.get(['linkCollections'], (result) => {
-               const collections = result.linkCollections || [];
-               const updatedCollections = collections.filter(c => c.id !== collectionId);
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        window.__pistonpryMode = 'fullpage';
+        window.__pistonpryExtractTypes = ['links', 'images', 'emails'];
+      },
+    });
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['content.js'],
+    });
+  } catch (err) {
+    console.error('Full-page extraction failed:', err);
+  }
+});
 
-               chrome.storage.local.set({ linkCollections: updatedCollections }, () => {
-                    if (chrome.runtime.lastError) {
-                         reject(chrome.runtime.lastError);
-                    } else {
-                         resolve();
-                    }
-               });
-          });
-     });
-}
-
-// Helper function to save extraction history
-function saveExtractionHistory(links, sourceUrl, sourceTitle) {
-     return new Promise((resolve, reject) => {
-          chrome.storage.local.get(['extractionHistory'], (result) => {
-               const history = result.extractionHistory || [];
-               const timestamp = new Date().toISOString();
-
-               // Create a new history entry
-               const newEntry = {
-                    id: Date.now().toString(),
-                    timestamp,
-                    sourceUrl,
-                    sourceTitle: sourceTitle || (new URL(sourceUrl)).hostname,
-                    count: links.length,
-                    links: links.slice(0, 3) // Just store the first 3 links as a preview
-               };
-
-               // Keep only the last 10 entries (most recent first)
-               history.unshift(newEntry);
-               if (history.length > 10) {
-                    history.length = 10;
-               }
-
-               chrome.storage.local.set({ extractionHistory: history }, () => {
-                    if (chrome.runtime.lastError) {
-                         reject(chrome.runtime.lastError);
-                    } else {
-                         resolve(history);
-                    }
-               });
-          });
-     });
-}
-
-// Helper function to get extraction history
-function getExtractionHistory() {
-     return new Promise((resolve) => {
-          chrome.storage.local.get(['extractionHistory'], (result) => {
-               resolve(result.extractionHistory || []);
-          });
-     });
-}
-
-// Listener for messages from the content script or result page
+// ── Process extracted links ──
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-     if (request.action === "extractedLinks") {
-          if (request.links && request.links.length > 0) {
-               // Process links to identify their types
-               const processedLinks = request.links.map(link => {
-                    // Extract domain information
-                    let domain = '';
-                    let isExternal = false;
-                    try {
-                         const url = new URL(link);
-                         domain = url.hostname;
-                         // Check if it's an external link (different from the current page)
-                         if (sender.tab && sender.tab.url) {
-                              const tabUrl = new URL(sender.tab.url);
-                              isExternal = url.hostname !== tabUrl.hostname;
-                         }
-                    } catch (e) {
-                         console.error("Invalid URL:", link);
-                    }
+  if (request.action === 'extractedLinks') {
+    handleExtractedLinks(request, sender, sendResponse);
+    return true;
+  }
 
-                    // Determine link type based on extension or patterns
-                    let type = 'webpage';
-                    const lowerCaseLink = link.toLowerCase();
-                    if (lowerCaseLink.match(/\.(jpg|jpeg|png|gif|bmp|svg|webp)(\?.*)?$/)) {
-                         type = 'image';
-                    } else if (lowerCaseLink.match(/\.(pdf)(\?.*)?$/)) {
-                         type = 'pdf';
-                    } else if (lowerCaseLink.match(/\.(doc|docx|xls|xlsx|ppt|pptx)(\?.*)?$/)) {
-                         type = 'document';
-                    } else if (lowerCaseLink.match(/\.(mp4|webm|ogg|mov|avi)(\?.*)?$/)) {
-                         type = 'video';
-                    } else if (lowerCaseLink.match(/\.(mp3|wav|flac|ogg)(\?.*)?$/)) {
-                         type = 'audio';
-                    } else if (lowerCaseLink.includes('youtube.com/watch') || lowerCaseLink.includes('youtu.be/')) {
-                         type = 'youtube';
-                    } else if (lowerCaseLink.match(/\.(zip|rar|7z|tar|gz)(\?.*)?$/)) {
-                         type = 'archive';
-                    }
-
-                    return {
-                         url: link,
-                         domain,
-                         isExternal,
-                         type
-                    };
-               });
-
-               // Source URL for the collection
-               const sourceUrl = sender.tab ? sender.tab.url : '';
-               const sourceTitle = sender.tab ? sender.tab.title : '';
-
-               // Save to extraction history
-               saveExtractionHistory(request.links, sourceUrl, sourceTitle);
-
-               // Generate HTML for links with checkboxes for bulk actions
-               const linksHtml = processedLinks
-                    .map(link => `
-                    <li data-type="${link.type}" data-domain="${link.domain}" data-external="${link.isExternal}">
-                         <input type="checkbox" class="link-checkbox">
-                         <a href="${link.url}" target="_blank" rel="noopener noreferrer">${link.url}</a>
-                         <span class="link-meta">[${link.type}${link.isExternal ? ', external' : ''}]</span>
-                    </li>`)
-                    .join('');
-
-               // Get unique link types for filter dropdown
-               const linkTypes = [...new Set(processedLinks.map(link => link.type))];
-               const typeOptionsHtml = linkTypes
-                    .map(type => `<option value="${type}">${type.charAt(0).toUpperCase() + type.slice(1)}</option>`)
-                    .join('');
-
-               // Initialize collections section
-               getAllCollections().then(collections => {
-                    const collectionsHtml = collections.map(collection => `
-                        <div class="collection-item" data-id="${collection.id}">
-                            <div class="collection-header">
-                                <h3>${collection.name}</h3>
-                                <div>
-                                    <span class="collection-count">${collection.count} links</span>
-                                    <button class="view-collection" data-id="${collection.id}">View</button>
-                                    <button class="delete-collection" data-id="${collection.id}">Delete</button>
-                                </div>
-                            </div>
-                            <div class="collection-meta">
-                                Saved on ${new Date(collection.timestamp).toLocaleDateString()} from
-                                <a href="${collection.sourceUrl}" target="_blank">${new URL(collection.sourceUrl).hostname}</a>
-                            </div>
-                        </div>
-                    `).join('') || '<p>No saved collections yet.</p>';
-
-                    const newTabContent = `
-           <html>
-             <head>
-               <title>Extracted Links</title>
-               <style>
-                 /* Base styles */
-                 body { 
-                    font-family: system-ui, -apple-system, sans-serif; 
-                    padding: 20px; 
-                    max-width: 1200px; 
-                    margin: 0 auto; 
-                    background: #f5f5f5;
-                    color: #333;
-                 }
-                 * {
-                    box-sizing: border-box;
-                 }
-                 .container {
-                    background: white;
-                    padding: 24px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-                    margin-bottom: 24px;
-                 }
-                 
-                 /* Header styles */
-                 .header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 24px;
-                    padding-bottom: 16px;
-                    border-bottom: 1px solid #eee;
-                 }
-                 .header h1 {
-                    margin: 0;
-                    font-size: 24px;
-                    color: #2c3e50;
-                 }
-                 
-                 /* Controls section */
-                 .controls-wrapper {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 16px;
-                    margin-bottom: 24px;
-                 }
-                 .controls {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 16px;
-                    padding: 16px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                    border: 1px solid #e9ecef;
-                 }
-                 .controls-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    margin: 0 0 8px 0;
-                    color: #2c3e50;
-                 }
-                 .filter-section {
-                    display: flex;
-                    flex-wrap: wrap;
-                    align-items: center;
-                    gap: 16px;
-                    width: 100%;
-                 }
-                 .action-section {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 8px;
-                    margin-top: 8px;
-                    width: 100%;
-                 }
-                 .filter-group {
-                    display: flex;
-                    align-items: center;
-                    min-width: 200px;
-                    flex: 1;
-                 }
-                 .filter-group label {
-                    white-space: nowrap;
-                    font-weight: 500;
-                    margin-right: 8px;
-                    min-width: 60px;
-                 }
-                 .filter-group input,
-                 .filter-group select {
-                    flex: 1;
-                    min-width: 120px;
-                 }
-                 
-                 /* Button styles */
-                 button {
-                    padding: 8px 16px;
-                    border: none;
-                    border-radius: 4px;
-                    background: #007bff;
-                    color: white;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    font-weight: 500;
-                    white-space: nowrap;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                 }
-                 button:hover {
-                    background: #0056b3;
-                    transform: translateY(-1px);
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                 }
-                 button.delete-collection {
-                    background: #dc3545;
-                 }
-                 button.delete-collection:hover {
-                    background: #c82333;
-                 }
-                 button.secondary-button {
-                    background: #6c757d;
-                 }
-                 button.secondary-button:hover {
-                    background: #5a6268;
-                 }
-                 
-                 /* Form controls */
-                 input, select {
-                    padding: 8px 12px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    font-size: 14px;
-                    transition: border-color 0.2s;
-                 }
-                 input:focus, select:focus {
-                    border-color: #007bff;
-                    outline: none;
-                    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-                 }
-                 
-                 /* Link list styles */
-                 ul { 
-                    list-style-type: none; 
-                    padding-left: 0; 
-                    margin-top: 20px;
-                    border: 1px solid #eee;
-                    border-radius: 4px;
-                 }
-                 li { 
-                    margin: 0;
-                    padding: 12px;
-                    border-bottom: 1px solid #eee;
-                    display: flex;
-                    align-items: center;
-                 }
-                 li:last-child {
-                    border-bottom: none;
-                 }
-                 li:hover {
-                    background: #f8f9fa;
-                 }
-                 li input.link-checkbox {
-                    margin-right: 12px;
-                    min-width: 18px;
-                    height: 18px;
-                 }
-                 a { 
-                    word-break: break-all;
-                    color: #0066cc;
-                    text-decoration: none;
-                    flex: 1;
-                 }
-                 a:hover {
-                    text-decoration: underline;
-                 }
-                 
-                 /* Feature section styles */
-                 .feature-section {
-                    background-color: #f8f9fa;
-                    border-radius: 8px;
-                    padding: 16px;
-                    margin-bottom: 16px;
-                    border: 1px solid #e9ecef;
-                 }
-                 .feature-section-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    margin: 0 0 12px 0;
-                    color: #2c3e50;
-                 }
-                 
-                 /* Export options section */
-                 #exportOptions {
-                    display: flex;
-                    align-items: center;
-                    flex-wrap: wrap;
-                    gap: 12px;
-                 }
-                 #exportFormat {
-                    min-width: 120px;
-                    flex-grow: 1;
-                 }
-                 
-                 /* Bulk actions section */
-                 .bulk-actions {
-                    margin-top: 24px;
-                    margin-bottom: 24px;
-                    background-color: #f0f8ff;
-                    border-radius: 8px;
-                    border: 1px solid #e0f0ff;
-                 }
-                 .bulk-action-header {
-                    margin: 0 0 16px 0;
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #0056b3;
-                 }
-                 .bulk-actions-content {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 16px;
-                 }
-                 .select-options {
-                    display: flex;
-                    flex-wrap: wrap;
-                    align-items: center;
-                    gap: 16px;
-                    padding-bottom: 12px;
-                    border-bottom: 1px solid #e0f0ff;
-                 }
-                 .select-option {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                 }
-                 .select-option input[type="checkbox"] {
-                    width: 18px;
-                    height: 18px;
-                 }
-                 .bulk-actions-row {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 12px;
-                 }
-                 
-                 /* Collection form */
-                 #saveCollectionForm {
-                    display: flex;
-                    align-items: stretch;
-                    gap: 12px;
-                    margin-top: 24px;
-                    padding: 16px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                    border: 1px solid #e9ecef;
-                 }
-                 #saveCollectionForm input {
-                    flex: 1;
-                    min-width: 200px;
-                 }
-                 
-                 /* Stats indicators */
-                 .stats {
-                    color: #666;
-                    font-size: 14px;
-                    padding: 4px 8px;
-                    background: #f8f9fa;
-                    border-radius: 4px;
-                    border: 1px solid #e9ecef;
-                 }
-                 .link-meta {
-                    color: #666;
-                    font-size: 13px;
-                    margin-left: 8px;
-                    white-space: nowrap;
-                    background: #f0f0f0;
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                 }
-                 
-                 /* Tab styles */
-                 .tabs {
-                    display: flex;
-                    margin-bottom: 20px;
-                    border-bottom: 1px solid #ddd;
-                    background: white;
-                    border-radius: 8px 8px 0 0;
-                    overflow: hidden;
-                 }
-                 .tab {
-                    padding: 12px 24px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    background: #f8f9fa;
-                    border-right: 1px solid #eee;
-                 }
-                 .tab:last-child {
-                    border-right: none;
-                 }
-                 .tab:hover {
-                    background: #e9ecef;
-                 }
-                 .tab.active {
-                    background: white;
-                    border-bottom: 3px solid #007bff;
-                    font-weight: 600;
-                 }
-                 .tab-content {
-                    display: none;
-                 }
-                 .tab-content.active {
-                    display: block;
-                 }
-                 
-                 /* Collection item styles */
-                 .collection-item {
-                    border: 1px solid #eee;
-                    border-radius: 8px;
-                    padding: 16px;
-                    margin-bottom: 16px;
-                    transition: box-shadow 0.2s;
-                 }
-                 .collection-item:hover {
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                 }
-                 .collection-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                 }
-                 .collection-header h3 {
-                    margin: 0;
-                    color: #2c3e50;
-                 }
-                 .collection-meta {
-                    color: #666;
-                    font-size: 14px;
-                    margin-top: 8px;
-                 }
-                 .collection-count {
-                    color: #666;
-                    margin-right: 12px;
-                    font-size: 14px;
-                 }
-                 .collection-buttons {
-                    display: flex;
-                    gap: 8px;
-                 }
-                 
-                 /* Loading overlay */
-                 .loading-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: rgba(255, 255, 255, 0.9);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 9999;
-                    visibility: hidden;
-                    opacity: 0;
-                    transition: opacity 0.3s, visibility 0.3s;
-                 }
-                 .loading-overlay.visible {
-                    visibility: visible;
-                    opacity: 1;
-                 }
-                 .loading-spinner {
-                    width: 50px;
-                    height: 50px;
-                    border: 5px solid #f3f3f3;
-                    border-top: 5px solid #007bff;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                 }
-                 @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                 }
-                 
-                 /* Responsive design adjustments */
-                 @media (max-width: 768px) {
-                    .header {
-                       flex-direction: column;
-                       align-items: flex-start;
-                       gap: 12px;
-                    }
-                    .filter-group {
-                       width: 100%;
-                    }
-                    #saveCollectionForm {
-                       flex-direction: column;
-                    }
-                    .collection-header {
-                       flex-direction: column;
-                       align-items: flex-start;
-                       gap: 12px;
-                    }
-                    .bulk-actions-row,
-                    .select-options {
-                       flex-direction: column;
-                       align-items: flex-start;
-                    }
-                    button {
-                       width: 100%;
-                    }
-                 }
-               </style>
-             </head>
-             <body>
-               <div class="tabs">
-                 <div class="tab active" data-tab="current">Current Links</div>
-                 <div class="tab" data-tab="saved">Saved Collections</div>
-               </div>
-               
-               <div id="currentTab" class="tab-content active">
-                 <div class="container">
-                   <div class="header">
-                     <h1>Extracted Links</h1>
-                     <span class="stats">Total Links: <span id="linkCount">${processedLinks.length}</span></span>
-                   </div>
-                   
-                   <div class="controls-wrapper">
-                     <div class="feature-section">
-                       <h3 class="feature-section-title">Filter Links</h3>
-                       <div class="controls">
-                         <div class="filter-section">
-                           <div class="filter-group">
-                             <label for="filterInput">Search:</label>
-                             <input type="text" id="filterInput" placeholder="Filter by text...">
-                           </div>
-                           <div class="filter-group">
-                             <label for="typeFilter">Type:</label>
-                             <select id="typeFilter">
-                               <option value="">All Types</option>
-                               ${typeOptionsHtml}
-                             </select>
-                           </div>
-                           <div class="filter-group">
-                             <label for="locationFilter">Location:</label>
-                             <select id="locationFilter">
-                               <option value="">All Links</option>
-                               <option value="internal">Internal</option>
-                               <option value="external">External</option>
-                             </select>
-                           </div>
-                         </div>
-                         <div class="action-section">
-                           <button onclick="copyAllLinks()">Copy All Links</button>
-                           <button onclick="copyVisibleLinks()">Copy Visible Links</button>
-                           <button onclick="resetFilters()" class="secondary-button">Reset Filters</button>
-                         </div>
-                       </div>
-                     </div>
-                     
-                     <div class="feature-section">
-                       <h3 class="feature-section-title">Export Options</h3>
-                       <div id="exportOptions">
-                         <label for="exportFormat">Format:</label>
-                         <select id="exportFormat">
-                           <option value="text">Plain Text</option>
-                           <option value="csv">CSV</option>
-                           <option value="json">JSON</option>
-                           <option value="markdown">Markdown</option>
-                           <option value="html">HTML</option>
-                         </select>
-                         <button onclick="exportLinks()">Export</button>
-                       </div>
-                     </div>
-                   </div>
-                   
-                   <div class="bulk-actions feature-section">
-                     <h3 class="bulk-action-header">Bulk Actions</h3>
-                     <div class="bulk-actions-content">
-                       <div class="select-options">
-                         <div class="select-option">
-                           <input type="checkbox" id="selectAllLinks" onchange="toggleSelectAll()">
-                           <label for="selectAllLinks">Select All</label>
-                         </div>
-                         <div class="select-option">
-                           <button onclick="selectByType()">Select By Type</button>
-                         </div>
-                         <div class="select-option">
-                           <button onclick="invertSelection()" class="secondary-button">Invert Selection</button>
-                         </div>
-                       </div>
-                       
-                       <div class="bulk-actions-row">
-                         <button onclick="openSelectedLinks()">Open Selected Links</button>
-                         <button onclick="copySelectedLinks()">Copy Selected Links</button>
-                         <button onclick="downloadSelectedFiles()">Download Selected Files</button>
-                         <button onclick="addSelectedToBookmarks()">Add To Bookmarks</button>
-                       </div>
-                     </div>
-                   </div>
-                   
-                   <ul id="linksList">${linksHtml}</ul>
-                   
-                   <form id="saveCollectionForm">
-                     <input type="text" id="collectionName" placeholder="Collection Name..." required>
-                     <button type="submit">Save Collection</button>
-                   </form>
-                 </div>
-               </div>
-               
-               <div id="savedTab" class="tab-content">
-                 <div class="container">
-                   <div class="header">
-                     <h1>Saved Collections</h1>
-                   </div>
-                   <div id="collectionsContainer">
-                     ${collectionsHtml}
-                   </div>
-                 </div>
-               </div>
-               
-               <div class="loading-overlay" id="loadingOverlay">
-                 <div class="loading-spinner"></div>
-               </div>
-
-               <script>
-                 // Toggle loading overlay
-                 function showLoading() {
-                   document.getElementById('loadingOverlay').classList.add('visible');
-                 }
-                 
-                 function hideLoading() {
-                   document.getElementById('loadingOverlay').classList.remove('visible');
-                 }
-               
-                 // Copy all links to clipboard
-                 function copyAllLinks() {
-                   const links = Array.from(document.querySelectorAll('li a')).map(a => a.href).join('\\n');
-                   navigator.clipboard.writeText(links).then(() => {
-                     alert('All links copied to clipboard!');
-                   }).catch(err => {
-                     console.error('Failed to copy links: ', err);
-                   });
-                 }
-                 
-                 // Copy only visible links
-                 function copyVisibleLinks() {
-                   const visibleLinks = Array.from(document.querySelectorAll('li:not([style*="display: none"]) a')).map(a => a.href).join('\\n');
-                   navigator.clipboard.writeText(visibleLinks).then(() => {
-                     alert('Visible links copied to clipboard!');
-                   }).catch(err => {
-                     console.error('Failed to copy links: ', err);
-                   });
-                 }
-                 
-                 // Open selected links in new tabs
-                 function openSelectedLinks() {
-                   const selectedLinks = Array.from(document.querySelectorAll('li:not([style*="display: none"]) input.link-checkbox:checked'))
-                     .map(cb => cb.closest('li').querySelector('a').href);
-                     
-                   if (selectedLinks.length === 0) {
-                     alert('No links selected. Please select links using the checkboxes.');
-                     return;
-                   }
-                   
-                   if (selectedLinks.length > 10) {
-                     if (!confirm(\`You are about to open \${selectedLinks.length} tabs. Continue?\`)) {
-                       return;
-                     }
-                   }
-                   
-                   selectedLinks.forEach(url => window.open(url, '_blank'));
-                 }
-                 
-                 // Copy selected links to clipboard
-                 function copySelectedLinks() {
-                   const selectedLinks = Array.from(document.querySelectorAll('li:not([style*="display: none"]) input.link-checkbox:checked'))
-                     .map(cb => cb.closest('li').querySelector('a').href);
-                     
-                   if (selectedLinks.length === 0) {
-                     alert('No links selected. Please select links using the checkboxes.');
-                     return;
-                   }
-                   
-                   navigator.clipboard.writeText(selectedLinks.join('\\n')).then(() => {
-                     alert(\`\${selectedLinks.length} links copied to clipboard!\`);
-                   }).catch(err => {
-                     console.error('Failed to copy links: ', err);
-                   });
-                 }
-                 
-                 // Download selected files
-                 function downloadSelectedFiles() {
-                   const selectedItems = Array.from(document.querySelectorAll('li:not([style*="display: none"]) input.link-checkbox:checked'))
-                     .map(cb => {
-                       const li = cb.closest('li');
-                       return {
-                         url: li.querySelector('a').href,
-                         type: li.getAttribute('data-type')
-                       };
-                     });
-                     
-                   if (selectedItems.length === 0) {
-                     alert('No links selected. Please select links using the checkboxes.');
-                     return;
-                   }
-                   
-                   // Filter for only downloadable content
-                   const downloadableTypes = ['image', 'pdf', 'document', 'video', 'audio', 'archive'];
-                   const downloadable = selectedItems.filter(item => downloadableTypes.includes(item.type));
-                   
-                   if (downloadable.length === 0) {
-                     alert('None of the selected links appear to be directly downloadable files. Try selecting links to images, documents, PDFs, etc.');
-                     return;
-                   }
-                   
-                   if (downloadable.length > 5) {
-                     if (!confirm(\`You are about to download \${downloadable.length} files. Continue?\`)) {
-                       return;
-                     }
-                   }
-                   
-                   // Show loading overlay for large downloads
-                   if (downloadable.length > 2) {
-                     showLoading();
-                   }
-                   
-                   // Start downloads
-                   let downloaded = 0;
-                   downloadable.forEach(item => {
-                     const a = document.createElement('a');
-                     a.href = item.url;
-                     a.download = ''; // Let browser determine filename from URL
-                     document.body.appendChild(a);
-                     a.click();
-                     document.body.removeChild(a);
-                     
-                     downloaded++;
-                     if (downloaded === downloadable.length && downloadable.length > 2) {
-                       setTimeout(() => {
-                         hideLoading();
-                       }, 1000);
-                     }
-                   });
-                 }
-                 
-                 // Add selected links to bookmarks
-                 function addSelectedToBookmarks() {
-                   const selectedLinks = Array.from(document.querySelectorAll('li:not([style*="display: none"]) input.link-checkbox:checked'))
-                     .map(cb => {
-                       const a = cb.closest('li').querySelector('a');
-                       return { url: a.href, title: a.textContent.trim() };
-                     });
-                     
-                   if (selectedLinks.length === 0) {
-                     alert('No links selected. Please select links using the checkboxes.');
-                     return;
-                   }
-                   
-                   // Create a temporary folder name based on current date
-                   const folderName = 'PistonPry Links - ' + new Date().toLocaleDateString();
-                   
-                   // In Chrome extensions, you can't programmatically add bookmarks without the bookmarks permission
-                   // So we'll create a temp page with link tags and bookmark data attributes
-                   const bookmarkPageContent = \`
-                     <html>
-                       <head>
-                         <title>\${folderName}</title>
-                         <style>
-                           body { font-family: system-ui; padding: 30px; max-width: 800px; margin: 0 auto; line-height: 1.6; }
-                           h1 { margin-bottom: 20px; }
-                           .instructions { background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-                           ul { padding-left: 20px; }
-                           li { margin-bottom: 10px; }
-                         </style>
-                       </head>
-                       <body>
-                         <h1>Bookmark These Links</h1>
-                         <div class="instructions">
-                           <p>To bookmark all these links:</p>
-                           <ol>
-                             <li>Press <strong>Ctrl+D</strong> or <strong>⌘+D</strong> to bookmark this page</li>
-                             <li>Create a new folder named "\${folderName}" for the bookmark</li>
-                             <li>Then, right-click this page and choose "Bookmark all tabs" if you want to save the actual links</li>
-                           </ol>
-                         </div>
-                         <h2>Links to Bookmark:</h2>
-                         <ul>
-                           \${selectedLinks.map(link => \`<li><a href="\${link.url}" target="_blank">\${link.url}</a></li>\`).join('')}
-                         </ul>
-                         <p>Links exported by PistonPry on \${new Date().toLocaleString()}</p>
-                       </body>
-                     </html>
-                   \`;
-                   
-                   window.open('data:text/html;charset=UTF-8,' + encodeURIComponent(bookmarkPageContent), '_blank');
-                 }
-                 
-                 // Toggle select all checkboxes
-                 function toggleSelectAll() {
-                   const selectAll = document.getElementById('selectAllLinks').checked;
-                   document.querySelectorAll('li:not([style*="display: none"]) input.link-checkbox').forEach(cb => {
-                     cb.checked = selectAll;
-                   });
-                 }
-                 
-                 // Select links by type
-                 function selectByType() {
-                   const availableTypes = [...new Set(Array.from(document.querySelectorAll('li:not([style*="display: none"])'))
-                     .map(li => li.getAttribute('data-type')))];
-                     
-                   const typeToSelect = prompt(
-                     \`Select links by type. Available types:\\n\${availableTypes.join(', ')}\\n\\nEnter a type:\`, 
-                     availableTypes[0]
-                   );
-                   
-                   if (!typeToSelect) return;
-                   
-                   document.querySelectorAll('li:not([style*="display: none"])').forEach(li => {
-                     const checkbox = li.querySelector('input.link-checkbox');
-                     checkbox.checked = li.getAttribute('data-type') === typeToSelect;
-                   });
-                 }
-                 
-                 // Invert the current selection
-                 function invertSelection() {
-                   document.querySelectorAll('li:not([style*="display: none"]) input.link-checkbox').forEach(cb => {
-                     cb.checked = !cb.checked;
-                   });
-                 }
-
-                 // Apply filters based on all current filter settings
-                 function applyFilters() {
-                   const textFilter = document.getElementById('filterInput').value.toLowerCase();
-                   const typeFilter = document.getElementById('typeFilter').value;
-                   const locationFilter = document.getElementById('locationFilter').value;
-                   
-                   const items = document.querySelectorAll('li');
-                   let count = 0;
-                   
-                   items.forEach(item => {
-                     const link = item.querySelector('a').href.toLowerCase();
-                     const type = item.getAttribute('data-type');
-                     const isExternal = item.getAttribute('data-external') === 'true';
-                     
-                     // Check if the item matches all active filters
-                     const matchesText = link.includes(textFilter);
-                     const matchesType = !typeFilter || type === typeFilter;
-                     const matchesLocation = !locationFilter || 
-                                           (locationFilter === 'external' && isExternal) || 
-                                           (locationFilter === 'internal' && !isExternal);
-                     
-                     if (matchesText && matchesType && matchesLocation) {
-                       item.style.display = '';
-                       count++;
-                     } else {
-                       item.style.display = 'none';
-                     }
-                   });
-                   
-                   document.getElementById('linkCount').textContent = count;
-                 }
-                 
-                 // Reset all filters
-                 function resetFilters() {
-                   document.getElementById('filterInput').value = '';
-                   document.getElementById('typeFilter').value = '';
-                   document.getElementById('locationFilter').value = '';
-                   applyFilters();
-                 }
-                 
-                 // Export links in various formats
-                 function exportLinks() {
-                   const format = document.getElementById('exportFormat').value;
-                   const visibleLinks = Array.from(document.querySelectorAll('li:not([style*="display: none"]) a')).map(a => a.href);
-                   
-                   if (visibleLinks.length === 0) {
-                     alert('No links to export!');
-                     return;
-                   }
-                   
-                   let content = '';
-                   let filename = 'extracted_links';
-                   let mimeType = 'text/plain';
-                   
-                   switch (format) {
-                     case 'text':
-                       content = visibleLinks.join('\\n');
-                       filename += '.txt';
-                       break;
-                     case 'csv':
-                       content = 'URL\\n' + visibleLinks.map(link => '"' + link + '"').join('\\n');
-                       filename += '.csv';
-                       mimeType = 'text/csv';
-                       break;
-                     case 'json':
-                       content = JSON.stringify(visibleLinks, null, 2);
-                       filename += '.json';
-                       mimeType = 'application/json';
-                       break;
-                     case 'markdown':
-                       content = visibleLinks.map(link => '- [' + link + '](' + link + ')').join('\\n');
-                       filename += '.md';
-                       mimeType = 'text/markdown';
-                       break;
-                     case 'html':
-                       content = '<ul>\\n' + visibleLinks.map(link => '  <li><a href="' + link + '">' + link + '</a></li>').join('\\n') + '\\n</ul>';
-                       filename += '.html';
-                       mimeType = 'text/html';
-                       break;
-                   }
-                   
-                   const blob = new Blob([content], { type: mimeType });
-                   const url = URL.createObjectURL(blob);
-                   
-                   const a = document.createElement('a');
-                   a.href = url;
-                   a.download = filename;
-                   document.body.appendChild(a);
-                   a.click();
-                   document.body.removeChild(a);
-                   URL.revokeObjectURL(url);
-                 }
-                 
-                 // Save the current collection
-                 document.getElementById('saveCollectionForm').addEventListener('submit', function(e) {
-                   e.preventDefault();
-                   
-                   const name = document.getElementById('collectionName').value.trim();
-                   if (!name) {
-                     alert('Please enter a collection name.');
-                     return;
-                   }
-                   
-                   const visibleLinks = Array.from(document.querySelectorAll('li:not([style*="display: none"]) a')).map(a => a.href);
-                   if (visibleLinks.length === 0) {
-                     alert('No links to save!');
-                     return;
-                   }
-                   
-                   // Get source URL from page
-                   const sourceUrl = '${sourceUrl}';
-                   
-                   // Send message to background script to save collection
-                   chrome.runtime.sendMessage({
-                     action: 'saveCollection',
-                     name,
-                     links: visibleLinks,
-                     sourceUrl
-                   }, response => {
-                     if (response.success) {
-                       alert('Collection saved!');
-                       document.getElementById('collectionName').value = '';
-                       
-                       // Update the collections list
-                       const newCollection = response.collection;
-                       const collectionsContainer = document.getElementById('collectionsContainer');
-                       
-                       if (collectionsContainer.innerHTML.includes('No saved collections yet')) {
-                         collectionsContainer.innerHTML = '';
-                       }
-                       
-                       const collectionHtml = \`
-                         <div class="collection-item" data-id="\${newCollection.id}">
-                           <div class="collection-header">
-                             <h3>\${newCollection.name}</h3>
-                             <div>
-                               <span class="collection-count">\${newCollection.count} links</span>
-                               <button class="view-collection" data-id="\${newCollection.id}">View</button>
-                               <button class="delete-collection" data-id="\${newCollection.id}">Delete</button>
-                             </div>
-                           </div>
-                           <div class="collection-meta">
-                             Saved on \${new Date(newCollection.timestamp).toLocaleDateString()} from
-                             <a href="\${newCollection.sourceUrl}" target="_blank">\${new URL(newCollection.sourceUrl).hostname}</a>
-                           </div>
-                         </div>
-                       \`;
-                       
-                       collectionsContainer.insertAdjacentHTML('afterbegin', collectionHtml);
-                       attachCollectionEventListeners();
-                     } else {
-                       alert('Failed to save collection: ' + response.error);
-                     }
-                   });
-                 });
-                 
-                 // Tab switching
-                 document.querySelectorAll('.tab').forEach(tab => {
-                   tab.addEventListener('click', () => {
-                     // Remove active class from all tabs and tab contents
-                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                     
-                     // Add active class to clicked tab and corresponding content
-                     tab.classList.add('active');
-                     const tabName = tab.getAttribute('data-tab');
-                     document.getElementById(tabName + 'Tab').classList.add('active');
-                   });
-                 });
-                 
-                 // Handle collection actions (view, delete)
-                 function attachCollectionEventListeners() {
-                   // View collection
-                   document.querySelectorAll('.view-collection').forEach(button => {
-                     button.addEventListener('click', () => {
-                       const collectionId = button.getAttribute('data-id');
-                       chrome.runtime.sendMessage({
-                         action: 'getCollection',
-                         id: collectionId
-                       }, response => {
-                         if (response.collection) {
-                           // Create a new tab with the collection
-                           const linksHtml = response.collection.links
-                             .map(link => \`<li><a href="\${link}" target="_blank" rel="noopener noreferrer">\${link}</a></li>\`)
-                             .join('');
-                             
-                           const viewHtml = \`
-                             <html>
-                               <head>
-                                 <title>\${response.collection.name} - Saved Links</title>
-                                 <style>
-                                   body { 
-                                      font-family: system-ui, -apple-system, sans-serif; 
-                                      padding: 20px; 
-                                      max-width: 1200px; 
-                                      margin: 0 auto; 
-                                      background: #f5f5f5;
-                                   }
-                                   .container {
-                                      background: white;
-                                      padding: 20px;
-                                      border-radius: 8px;
-                                      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                                   }
-                                   h1 { margin-top: 0; }
-                                   ul { 
-                                      list-style-type: none; 
-                                      padding-left: 0; 
-                                   }
-                                   li { 
-                                      margin-bottom: 8px;
-                                      padding: 8px;
-                                      border: 1px solid #eee;
-                                      border-radius: 4px;
-                                   }
-                                   li:hover { background: #f8f9fa; }
-                                   a { 
-                                      color: #0066cc;
-                                      text-decoration: none;
-                                      word-break: break-all;
-                                   }
-                                   a:hover { text-decoration: underline; }
-                                   .meta {
-                                      color: #666;
-                                      font-size: 14px;
-                                      margin-bottom: 20px;
-                                   }
-                                 </style>
-                               </head>
-                               <body>
-                                 <div class="container">
-                                   <h1>\${response.collection.name}</h1>
-                                   <div class="meta">
-                                     Saved on \${new Date(response.collection.timestamp).toLocaleDateString()} from
-                                     <a href="\${response.collection.sourceUrl}" target="_blank">\${new URL(response.collection.sourceUrl).hostname}</a>
-                                   </div>
-                                   <ul>\${linksHtml}</ul>
-                                 </div>
-                               </body>
-                             </html>
-                           \`;
-                           
-                           chrome.tabs.create({ url: 'data:text/html;charset=UTF-8,' + encodeURIComponent(viewHtml) });
-                         } else {
-                           alert('Collection not found!');
-                         }
-                       });
-                     });
-                   });
-                   
-                   // Delete collection
-                   document.querySelectorAll('.delete-collection').forEach(button => {
-                     button.addEventListener('click', () => {
-                       if (confirm('Are you sure you want to delete this collection?')) {
-                         const collectionId = button.getAttribute('data-id');
-                         chrome.runtime.sendMessage({
-                           action: 'deleteCollection',
-                           id: collectionId
-                         }, response => {
-                           if (response.success) {
-                             const collectionItem = button.closest('.collection-item');
-                             collectionItem.remove();
-                             
-                             // Check if there are no more collections
-                             const collectionsContainer = document.getElementById('collectionsContainer');
-                             if (collectionsContainer.children.length === 0) {
-                               collectionsContainer.innerHTML = '<p>No saved collections yet.</p>';
-                             }
-                           } else {
-                             alert('Failed to delete collection: ' + response.error);
-                           }
-                         });
-                       }
-                     });
-                   });
-                 }
-                 
-                 // Attach event listeners
-                 attachCollectionEventListeners();
-                 
-                 // Set up event listeners for filter controls
-                 document.getElementById('filterInput').addEventListener('input', applyFilters);
-                 document.getElementById('typeFilter').addEventListener('change', applyFilters);
-                 document.getElementById('locationFilter').addEventListener('change', applyFilters);
-               </script>
-             </body>
-           </html>`;
-                    chrome.tabs.create({ url: 'data:text/html;charset=UTF-8,' + encodeURIComponent(newTabContent) });
-               });
-          } else {
-               // Inform the user that no links were found, by injecting a small script to show an alert on the active tab.
-               if (sender.tab && sender.tab.id) {
-                    chrome.scripting.executeScript({
-                         target: { tabId: sender.tab.id },
-                         func: () => { alert("No links found in the selected region."); }
-                    }).catch(err => console.error("Failed to show 'no links found' alert: ", err));
-               } else {
-                    console.log("No links found, and no sender tab ID to show an alert.");
-               }
-          }
-          sendResponse({ status: "Links processed" });
-     } else if (request.action === 'saveCollection') {
-          // Handle save collection request
-          saveLinkCollection(request.name, request.links, request.sourceUrl)
-               .then(collection => {
-                    sendResponse({ success: true, collection });
-               })
-               .catch(error => {
-                    sendResponse({ success: false, error: error.message });
-               });
-          return true; // Keep the message channel open for async response
-     } else if (request.action === 'getCollection') {
-          // Handle get collection request
-          getAllCollections().then(collections => {
-               const collection = collections.find(c => c.id === request.id);
-               sendResponse({ collection });
-          });
-          return true; // Keep the message channel open for async response
-     } else if (request.action === 'deleteCollection') {
-          // Handle delete collection request
-          deleteCollection(request.id)
-               .then(() => {
-                    sendResponse({ success: true });
-               })
-               .catch(error => {
-                    sendResponse({ success: false, error: error.message });
-               });
-          return true; // Keep the message channel open for async response
-     } else if (request.action === 'getHistory') {
-          // Handle get history request
-          getExtractionHistory().then(history => {
-               sendResponse({ history });
-          });
-          return true; // Keep the message channel open for async response
-     }
-     return true; // Required for asynchronous sendResponse
+  if (request.action === 'checkLinks') {
+    handleCheckLinks(request, sender, sendResponse);
+    return true;
+  }
 });
+
+async function handleExtractedLinks(request, sender, sendResponse) {
+  const items = request.items || [];
+
+  if (items.length === 0 && (!request.links || request.links.length === 0)) {
+    if (sender.tab?.id) {
+      chrome.scripting.executeScript({
+        target: { tabId: sender.tab.id },
+        func: showPageNotification,
+        args: ['No items found in the selected region'],
+      }).catch(() => {});
+    }
+    sendResponse({ status: 'No links' });
+    return;
+  }
+
+  const tabHostname = sender.tab?.url ? (() => {
+    try { return new URL(sender.tab.url).hostname; } catch { return ''; }
+  })() : '';
+
+  let processedLinks;
+
+  if (items.length > 0) {
+    // New format with items (text, itemType)
+    processedLinks = items.map(item => {
+      if (item.itemType === 'image') {
+        return classifyImage(item.url, tabHostname, item.text);
+      }
+      return classifyLink(item.url, tabHostname, item.text);
+    });
+  } else {
+    // Legacy format: just URLs
+    processedLinks = request.links.map(url => classifyLink(url, tabHostname, ''));
+  }
+
+  const sourceUrl = sender.tab?.url || '';
+  const sourceTitle = sender.tab?.title || '';
+
+  await chrome.storage.session.set({
+    currentExtraction: {
+      links: processedLinks,
+      sourceUrl,
+      sourceTitle,
+    },
+  });
+
+  chrome.tabs.create({ url: chrome.runtime.getURL('results.html') });
+
+  // Save to extraction history (with richer data)
+  saveExtractionHistory(processedLinks, sourceUrl, sourceTitle);
+
+  sendResponse({ status: 'Links processed' });
+}
+
+// ── Link Health Checker (Feature 9) ──
+async function handleCheckLinks(request, sender, sendResponse) {
+  const urls = request.urls || [];
+  const results = {};
+  const concurrency = 5;
+  let idx = 0;
+
+  async function checkOne(url) {
+    try {
+      const response = await fetch(url, {
+        method: 'HEAD',
+        redirect: 'follow',
+        signal: AbortSignal.timeout(10000),
+      });
+      const status = response.status;
+      let health = 'unknown';
+      if (status >= 200 && status < 300) health = 'alive';
+      else if (status >= 300 && status < 400) health = 'redirect';
+      else if (status >= 400) health = 'broken';
+      results[url] = { status, health };
+    } catch (err) {
+      // Try GET as fallback (some servers don't support HEAD)
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          redirect: 'follow',
+          signal: AbortSignal.timeout(10000),
+        });
+        const status = response.status;
+        let health = 'unknown';
+        if (status >= 200 && status < 300) health = 'alive';
+        else if (status >= 300 && status < 400) health = 'redirect';
+        else if (status >= 400) health = 'broken';
+        results[url] = { status, health };
+      } catch {
+        results[url] = { status: 0, health: 'error' };
+      }
+    }
+  }
+
+  async function worker() {
+    while (idx < urls.length) {
+      const currentIdx = idx++;
+      await checkOne(urls[currentIdx]);
+    }
+  }
+
+  // Run with concurrency limit
+  const workers = [];
+  for (let i = 0; i < Math.min(concurrency, urls.length); i++) {
+    workers.push(worker());
+  }
+  await Promise.all(workers);
+
+  sendResponse({ results });
+}
+
+// ── Extraction history ──
+async function saveExtractionHistory(processedLinks, sourceUrl, sourceTitle) {
+  const result = await chrome.storage.local.get('extractionHistory');
+  const history = result.extractionHistory || [];
+
+  let hostname = '';
+  try { hostname = new URL(sourceUrl).hostname; } catch { /* ignore */ }
+
+  history.unshift({
+    id: Date.now().toString(),
+    timestamp: new Date().toISOString(),
+    sourceUrl,
+    sourceTitle: sourceTitle || hostname,
+    count: processedLinks.length,
+    links: processedLinks.slice(0, 5),
+    allLinks: processedLinks,
+  });
+
+  if (history.length > 20) history.length = 20;
+  await chrome.storage.local.set({ extractionHistory: history });
+}
+
+// ── Injected notification (runs in page context) ──
+function showPageNotification(message) {
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const div = document.createElement('div');
+  div.textContent = message;
+  Object.assign(div.style, {
+    position: 'fixed',
+    top: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    padding: '10px 20px',
+    borderRadius: '100px',
+    fontSize: '13px',
+    fontWeight: '600',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    zIndex: '2147483647',
+    pointerEvents: 'none',
+    opacity: '0',
+    transition: 'opacity 0.25s',
+    background: isDark ? '#f0ece6' : '#1a1a1a',
+    color: isDark ? '#1a1a1a' : '#f0ece6',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+  });
+  document.body.appendChild(div);
+  requestAnimationFrame(() => { div.style.opacity = '1'; });
+  setTimeout(() => {
+    div.style.opacity = '0';
+    div.addEventListener('transitionend', () => div.remove(), { once: true });
+  }, 2500);
+}

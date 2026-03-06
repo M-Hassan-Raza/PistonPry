@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PistonPry — Extracted Links</title>
+  <link rel="stylesheet" href="results.css">
+</head>
+<body>
+  <a href="#linksList" class="pp-skip-link">Skip to links</a>
+
+  <main class="pp-shell">
+    <!-- Tabs -->
+    <div class="pp-tabs" role="tablist" aria-label="Results navigation">
+      <button role="tab" class="pp-tab" id="tab-current" aria-selected="true" aria-controls="panel-current" tabindex="0">
+        Current Links
+      </button>
+      <button role="tab" class="pp-tab" id="tab-saved" aria-selected="false" aria-controls="panel-saved" tabindex="-1">
+        Saved Collections
+      </button>
+      <button role="tab" class="pp-tab" id="tab-history" aria-selected="false" aria-controls="panel-history" tabindex="-1">
+        History
+      </button>
+    </div>
+
+    <!-- Current Links panel -->
+    <div role="tabpanel" class="pp-panel" id="panel-current" aria-labelledby="tab-current">
+
+      <!-- Header row -->
+      <div class="pp-header">
+        <h1 class="pp-title">Extracted Links</h1>
+        <span class="pp-count-pill" id="countPill">0</span>
+        <a class="pp-source-link" id="sourceMeta" href="#" target="_blank" rel="noopener noreferrer" hidden></a>
+        <div class="pp-header-actions">
+          <button class="pp-btn pp-btn--ghost pp-btn--sm" id="autoCopyToggle" title="Toggle auto-copy on extract">Auto-copy: Off</button>
+          <button class="pp-btn pp-btn--primary" id="copyAllBtn">Copy All</button>
+          <button class="pp-btn pp-btn--secondary" id="cleanUrlsBtn" title="Strip tracking parameters from all URLs">Clean URLs</button>
+          <button class="pp-btn pp-btn--secondary" id="checkLinksBtn" title="Check link health via HEAD requests">Check Links</button>
+          <button class="pp-btn pp-btn--secondary" id="shareBtn" title="Generate shareable HTML page">Share</button>
+          <div class="pp-export-wrap">
+            <button class="pp-btn pp-btn--secondary pp-export-toggle" id="exportToggle" aria-haspopup="true" aria-expanded="false">Export</button>
+            <div class="pp-export-menu" id="exportMenu" role="menu">
+              <button class="pp-export-option" role="menuitem" data-format="text">Plain Text (.txt)</button>
+              <button class="pp-export-option" role="menuitem" data-format="csv">CSV (.csv)</button>
+              <button class="pp-export-option" role="menuitem" data-format="json">JSON (.json)</button>
+              <button class="pp-export-option" role="menuitem" data-format="markdown">Markdown (.md)</button>
+              <button class="pp-export-option" role="menuitem" data-format="html">HTML (.html)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Domain Stats Bar (Feature 19) -->
+      <div class="pp-stats-bar" id="domainStatsBar" hidden></div>
+
+      <!-- Smart Grouping Suggestions (Feature 21) -->
+      <div class="pp-suggestions" id="suggestionsBar" hidden></div>
+
+      <!-- Link Health Summary (Feature 9) -->
+      <div class="pp-health-summary" id="healthSummary" hidden></div>
+
+      <!-- Type sub-tabs for links/images/emails (Feature 4) -->
+      <div class="pp-type-tabs" id="typeTabs">
+        <button class="pp-type-tab active" data-item-type="all">All <span class="pp-type-tab-count" id="countAll">0</span></button>
+        <button class="pp-type-tab" data-item-type="link">Links <span class="pp-type-tab-count" id="countLinks">0</span></button>
+        <button class="pp-type-tab" data-item-type="image">Images <span class="pp-type-tab-count" id="countImages">0</span></button>
+        <button class="pp-type-tab" data-item-type="email">Emails <span class="pp-type-tab-count" id="countEmails">0</span></button>
+      </div>
+
+      <!-- Filter toolbar -->
+      <div class="pp-filters">
+        <div class="pp-search-wrap">
+          <svg class="pp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" class="pp-search" id="searchInput" placeholder="Filter links...">
+          <button class="pp-regex-toggle" id="regexToggle" title="Toggle regex mode">/.*/ </button>
+        </div>
+        <div class="pp-search-wrap pp-pattern-wrap">
+          <input type="text" class="pp-search pp-pattern-input" id="patternInput" placeholder="URL pattern: */products/*">
+        </div>
+        <select class="pp-select" id="typeFilter" aria-label="Filter by type">
+          <option value="">All types</option>
+        </select>
+        <select class="pp-select" id="locationFilter" aria-label="Filter by location">
+          <option value="">All links</option>
+          <option value="internal">Internal</option>
+          <option value="external">External</option>
+        </select>
+        <button class="pp-btn pp-btn--ghost pp-btn--sm" id="dedupToggle" title="Toggle duplicate hiding">Dedup: Off</button>
+        <button class="pp-btn pp-btn--ghost pp-btn--sm pp-reset-btn" id="resetFiltersBtn" hidden>Clear filters</button>
+      </div>
+
+      <!-- View toggle (Feature 7) -->
+      <div class="pp-view-controls">
+        <button class="pp-view-btn active" id="viewFlat" title="Flat list view">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+        <button class="pp-view-btn" id="viewGrouped" title="Group by domain">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/></svg>
+        </button>
+        <!-- Sort controls (Feature 10) -->
+        <div class="pp-sort-controls">
+          <span class="pp-sort-label">Sort:</span>
+          <button class="pp-sort-btn active" data-sort="none">Default</button>
+          <button class="pp-sort-btn" data-sort="url">URL</button>
+          <button class="pp-sort-btn" data-sort="domain">Domain</button>
+          <button class="pp-sort-btn" data-sort="type">Type</button>
+          <button class="pp-sort-btn" data-sort="text">Text</button>
+          <button class="pp-sort-btn" data-sort="status">Status</button>
+        </div>
+      </div>
+
+      <!-- Action bar (hidden until selection) -->
+      <div class="pp-action-bar" id="actionBar" hidden>
+        <input type="checkbox" class="pp-checkbox" id="selectAll" aria-label="Select all links">
+        <span class="pp-selection-count" id="selectionCount">0 selected</span>
+        <div class="pp-action-buttons" id="actionButtons"></div>
+        <div class="pp-more-wrap">
+          <button class="pp-btn pp-btn--ghost pp-btn--sm" id="moreToggle" aria-haspopup="true" aria-expanded="false">More</button>
+          <div class="pp-more-menu" id="moreMenu" role="menu">
+            <button class="pp-more-option" role="menuitem" id="invertSelectionBtn">Invert Selection</button>
+            <button class="pp-more-option" role="menuitem" id="selectByTypeBtn">Select by Type</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Link list -->
+      <ul class="pp-links" id="linksList"></ul>
+
+      <!-- Save collection (collapsed by default) -->
+      <div class="pp-save-section" id="saveSection">
+        <button class="pp-btn pp-btn--ghost pp-btn--sm pp-save-toggle" id="saveToggle">Save as collection</button>
+        <form class="pp-save-form" id="saveForm" hidden>
+          <input type="text" class="pp-save-input" id="collectionNameInput" placeholder="Collection name..." required>
+          <input type="text" class="pp-save-input pp-tag-input" id="collectionTagsInput" placeholder="Tags (comma-separated)...">
+          <button type="submit" class="pp-btn pp-btn--primary pp-btn--sm">Save</button>
+          <button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" id="saveCancelBtn">Cancel</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Saved Collections panel -->
+    <div role="tabpanel" class="pp-panel" id="panel-saved" aria-labelledby="tab-saved" hidden>
+      <div class="pp-header">
+        <h1 class="pp-title">Saved Collections</h1>
+        <div class="pp-header-actions">
+          <button class="pp-btn pp-btn--secondary pp-btn--sm" id="importLinksBtn">Import</button>
+          <button class="pp-btn pp-btn--secondary pp-btn--sm" id="mergeCollectionsBtn" hidden>Merge Selected</button>
+          <button class="pp-btn pp-btn--secondary pp-btn--sm" id="diffCollectionsBtn" hidden>Compare Selected</button>
+        </div>
+      </div>
+      <!-- Tag filter (Feature 15) -->
+      <div class="pp-tag-filter" id="tagFilterBar" hidden></div>
+      <div id="collectionsContainer"></div>
+    </div>
+
+    <!-- History panel (Feature 14) -->
+    <div role="tabpanel" class="pp-panel" id="panel-history" aria-labelledby="tab-history" hidden>
+      <div class="pp-header">
+        <h1 class="pp-title">Extraction History</h1>
+      </div>
+      <div id="historyContainer"></div>
+    </div>
+  </main>
+
+  <!-- Toast container -->
+  <div id="toastContainer" aria-live="polite"></div>
+
+  <!-- Confirm dialog -->
+  <dialog class="pp-dialog" id="confirmDialog">
+    <div class="pp-dialog-title" id="dialogTitle"></div>
+    <div class="pp-dialog-message" id="dialogMessage"></div>
+    <div class="pp-dialog-actions">
+      <button class="pp-btn pp-btn--secondary" id="dialogCancel">Cancel</button>
+      <button class="pp-btn pp-btn--primary" id="dialogConfirm">Confirm</button>
+    </div>
+  </dialog>
+
+  <!-- Import dialog (Feature 23) -->
+  <dialog class="pp-dialog pp-dialog--wide" id="importDialog">
+    <div class="pp-dialog-title">Import Links</div>
+    <div class="pp-dialog-message">Paste URLs (one per line)</div>
+    <textarea class="pp-import-textarea" id="importTextarea" rows="10" placeholder="https://example.com&#10;https://another.com&#10;..."></textarea>
+    <input type="text" class="pp-save-input" id="importNameInput" placeholder="Collection name..." style="margin-top: 8px;">
+    <div class="pp-dialog-actions">
+      <button class="pp-btn pp-btn--secondary" id="importCancelBtn">Cancel</button>
+      <button class="pp-btn pp-btn--primary" id="importConfirmBtn">Import</button>
+    </div>
+  </dialog>
+
+  <!-- Diff dialog (Feature 17) -->
+  <dialog class="pp-dialog pp-dialog--wide" id="diffDialog">
+    <div class="pp-dialog-title" id="diffTitle">Collection Comparison</div>
+    <div id="diffContent" class="pp-diff-content"></div>
+    <div class="pp-dialog-actions">
+      <button class="pp-btn pp-btn--secondary" id="diffCloseBtn">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Keyboard shortcuts help (Feature 24) -->
+  <dialog class="pp-dialog pp-dialog--wide" id="shortcutsDialog">
+    <div class="pp-dialog-title">Keyboard Shortcuts</div>
+    <div class="pp-shortcuts-grid">
+      <div class="pp-shortcut"><kbd>j</kbd> / <kbd>k</kbd> <span>Move focus down / up</span></div>
+      <div class="pp-shortcut"><kbd>x</kbd> <span>Toggle checkbox on focused row</span></div>
+      <div class="pp-shortcut"><kbd>Enter</kbd> <span>Open focused link</span></div>
+      <div class="pp-shortcut"><kbd>c</kbd> <span>Copy focused link URL</span></div>
+      <div class="pp-shortcut"><kbd>/</kbd> <span>Focus search input</span></div>
+      <div class="pp-shortcut"><kbd>Escape</kbd> <span>Blur search / deselect</span></div>
+      <div class="pp-shortcut"><kbd>g</kbd> then <kbd>d</kbd> <span>Group by domain</span></div>
+      <div class="pp-shortcut"><kbd>g</kbd> then <kbd>f</kbd> <span>Go flat view</span></div>
+      <div class="pp-shortcut"><kbd>?</kbd> <span>Show this help</span></div>
+      <div class="pp-shortcut"><kbd>Ctrl</kbd>+<kbd>A</kbd> <span>Select all visible</span></div>
+      <div class="pp-shortcut"><kbd>Ctrl</kbd>+<kbd>C</kbd> <span>Copy selected links</span></div>
+    </div>
+    <div class="pp-dialog-actions">
+      <button class="pp-btn pp-btn--secondary" id="shortcutsCloseBtn">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Type selector popover (anchored near button on demand) -->
+  <div class="pp-type-popover" id="typePopover"></div>
+
+  <script src="utils.js"></script>
+  <script src="results.js"></script>
+</body>
+</html>

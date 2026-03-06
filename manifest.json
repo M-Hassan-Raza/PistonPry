@@ -1,12 +1,13 @@
 {
      "manifest_version": 3,
      "name": "PistonPry",
-     "version": "1.0",
-     "description": "Draw a rectangle on a webpage to extract links within that region.",
+     "version": "2.0",
+     "description": "A comprehensive web scraping power tool — extract links, images, and emails from any webpage region.",
      "permissions": [
        "activeTab",
        "scripting",
-       "storage"
+       "storage",
+       "contextMenus"
      ],
      "action": {
        "default_title": "Extract Links by Region",
@@ -21,6 +22,9 @@
        "48": "images/icon48.png",
        "128": "images/icon120.png"
      },
+     "content_security_policy": {
+       "extension_pages": "script-src 'self'; object-src 'none'"
+     },
      "background": {
        "service_worker": "background.js"
      },
@@ -31,6 +35,13 @@
            "mac": "Command+L"
          },
          "description": "Activate link extraction tool"
+       },
+       "extract_all": {
+         "suggested_key": {
+           "default": "Ctrl+Shift+L",
+           "mac": "Command+Shift+L"
+         },
+         "description": "Extract all links from page"
        }
      }
 }
