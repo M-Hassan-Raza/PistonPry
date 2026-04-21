@@ -1,10 +1,51 @@
 import { state, dom } from './state.js';
 import { showToast } from './toast.js';
 
+function getHealthCheckOrigins(urls) {
+  const origins = new Set();
+
+  urls.forEach((url) => {
+    try {
+      const parsed = new URL(url);
+      origins.add(`${parsed.protocol}//${parsed.host}/*`);
+    } catch {
+      // Skip invalid URLs. The caller already filters for HTTP(S).
+    }
+  });
+
+  return [...origins];
+}
+
+async function ensureHealthCheckAccess(origins) {
+  if (origins.length === 0) {
+    return true;
+  }
+
+  if (await chrome.permissions.contains({ origins })) {
+    return true;
+  }
+
+  showToast('info', 'Site access needed', 'Grant host access to check link health on these sites.');
+
+  try {
+    return await chrome.permissions.request({ origins });
+  } catch (err) {
+    showToast('error', 'Permission request failed', err.message || 'Chrome rejected the request');
+    return false;
+  }
+}
+
 export async function checkAllLinks(renderCurrentView) {
   const urls = [...new Set(state.allLinks.map(l => l.url).filter(u => u.startsWith('http')))];
   if (urls.length === 0) {
     showToast('warning', 'No HTTP links to check');
+    return;
+  }
+
+  const origins = getHealthCheckOrigins(urls);
+  const hasAccess = await ensureHealthCheckAccess(origins);
+  if (!hasAccess) {
+    showToast('warning', 'Health check cancelled', 'Site access is required to fetch remote link targets.');
     return;
   }
 

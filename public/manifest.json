@@ -9,6 +9,10 @@
        "storage",
        "contextMenus"
      ],
+     "optional_host_permissions": [
+       "https://*/*",
+       "http://*/*"
+     ],
      "action": {
        "default_title": "Extract Links by Region",
        "default_icon": {
