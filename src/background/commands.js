@@ -7,7 +7,7 @@ export async function handleActionClick(tab) {
         target: { tabId: tab.id },
         func: () => {
           window.__pistonpryMode = 'draw';
-          window.__pistonpryExtractTypes = ['links', 'images', 'emails'];
+          window.__pistonpryExtractTypes = ['links', 'images', 'contacts'];
         },
       });
       await chrome.scripting.executeScript({
@@ -39,7 +39,7 @@ export async function handleExtractAllCommand() {
       target: { tabId: tab.id },
       func: () => {
         window.__pistonpryMode = 'fullpage';
-        window.__pistonpryExtractTypes = ['links', 'images', 'emails'];
+        window.__pistonpryExtractTypes = ['links', 'images', 'contacts'];
       },
     });
     await chrome.scripting.executeScript({

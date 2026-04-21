@@ -123,10 +123,10 @@ export function populateTypeFilter(links) {
 export function updateItemTypeCounts() {
   const linkCount = state.allLinks.filter(l => (l.itemType || 'link') === 'link').length;
   const imageCount = state.allLinks.filter(l => l.itemType === 'image').length;
-  const emailCount = state.allLinks.filter(l => l.itemType === 'email' || l.itemType === 'phone').length;
+  const contactCount = state.allLinks.filter(l => l.itemType === 'contact').length;
 
   document.querySelector('#countAll').textContent = state.allLinks.length;
   document.querySelector('#countLinks').textContent = linkCount;
   document.querySelector('#countImages').textContent = imageCount;
-  document.querySelector('#countEmails').textContent = emailCount;
+  document.querySelector('#countContacts').textContent = contactCount;
 }

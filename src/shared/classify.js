@@ -5,10 +5,10 @@ export function classifyLink(url, tabHostname, text) {
   let subType = 'webpage';
 
   if (url.startsWith('mailto:')) {
-    return { url, domain: '', isExternal: false, type: 'email', itemType: 'email', text: text || '' };
+    return { url, domain: '', isExternal: false, type: 'email', itemType: 'contact', text: text || '' };
   }
   if (url.startsWith('tel:')) {
-    return { url, domain: '', isExternal: false, type: 'phone', itemType: 'phone', text: text || '' };
+    return { url, domain: '', isExternal: false, type: 'phone', itemType: 'contact', text: text || '' };
   }
 
   try {

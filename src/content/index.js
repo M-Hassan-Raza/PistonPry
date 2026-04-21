@@ -106,10 +106,10 @@ import { onPickClick, finalizePickMode } from './pick.js';
 
     if (e.key === 'Enter' && state.isMultiRegionMode && state.accumulatedItems.length > 0) {
       e.preventDefault();
-      const finalItems = { links: [], images: [], emails: [] };
+      const finalItems = { links: [], images: [], contacts: [] };
       state.accumulatedItems.forEach(item => {
         if (item.itemType === 'image') finalItems.images.push(item);
-        else if (item.itemType === 'email') finalItems.emails.push(item);
+        else if (item.itemType === 'contact') finalItems.contacts.push(item);
         else finalItems.links.push(item);
       });
       sendExtractedItems(finalItems, state.extractTypes);

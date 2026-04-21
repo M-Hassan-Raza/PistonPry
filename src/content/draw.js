@@ -129,7 +129,7 @@ export function onMouseUp(state, e) {
     const items = extractItemsInRegion(rect, state.extractTypes, state.cachedLinks);
     state.regionCount++;
 
-    [...items.links, ...items.images, ...items.emails].forEach(item => {
+    [...items.links, ...items.images, ...items.contacts].forEach(item => {
       if (!state.accumulatedUrlSet.has(item.url)) {
         state.accumulatedUrlSet.add(item.url);
         state.accumulatedItems.push(item);
@@ -146,10 +146,10 @@ export function onMouseUp(state, e) {
     }
 
     if (state.isMultiRegionMode || state.regionCount === 1) {
-      const finalItems = { links: [], images: [], emails: [] };
+      const finalItems = { links: [], images: [], contacts: [] };
       state.accumulatedItems.forEach(item => {
         if (item.itemType === 'image') finalItems.images.push(item);
-        else if (item.itemType === 'email') finalItems.emails.push(item);
+        else if (item.itemType === 'contact') finalItems.contacts.push(item);
         else finalItems.links.push(item);
       });
 
@@ -161,10 +161,10 @@ export function onMouseUp(state, e) {
     }
   } else {
     if (state.accumulatedItems.length > 0) {
-      const finalItems = { links: [], images: [], emails: [] };
+      const finalItems = { links: [], images: [], contacts: [] };
       state.accumulatedItems.forEach(item => {
         if (item.itemType === 'image') finalItems.images.push(item);
-        else if (item.itemType === 'email') finalItems.emails.push(item);
+        else if (item.itemType === 'contact') finalItems.contacts.push(item);
         else finalItems.links.push(item);
       });
       sendExtractedItems(finalItems, state.extractTypes);

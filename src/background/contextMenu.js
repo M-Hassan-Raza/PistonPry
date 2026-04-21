@@ -17,7 +17,7 @@ export async function handleContextMenuClick(info, tab) {
         window.__pistonpryMode = 'contextMenu';
         window.__pistonpryContextX = x;
         window.__pistonpryContextY = y;
-        window.__pistonpryExtractTypes = ['links', 'images', 'emails'];
+        window.__pistonpryExtractTypes = ['links', 'images', 'contacts'];
       },
       args: [info.x || 0, info.y || 0],
     });

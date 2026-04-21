@@ -69,7 +69,7 @@ export function onPickClick(state, e) {
 }
 
 export function finalizePickMode(state) {
-  const items = { links: [], images: [], emails: [] };
+  const items = { links: [], images: [], contacts: [] };
   const allLinks = document.querySelectorAll('a[href]');
   const pickedSet = new Set(state.pickedLinks);
   const seenUrls = new Set();
@@ -77,9 +77,9 @@ export function finalizePickMode(state) {
     if (pickedSet.has(link.href) && !seenUrls.has(link.href)) {
       seenUrls.add(link.href);
       if (link.href.startsWith('mailto:')) {
-        items.emails.push({ url: link.href, text: link.textContent.trim() });
+        items.contacts.push({ url: link.href, text: link.textContent.trim() });
       } else if (link.href.startsWith('tel:')) {
-        items.emails.push({ url: link.href, text: link.textContent.trim() });
+        items.contacts.push({ url: link.href, text: link.textContent.trim() });
       } else {
         items.links.push({ url: link.href, text: link.textContent.trim().substring(0, 500) });
       }
