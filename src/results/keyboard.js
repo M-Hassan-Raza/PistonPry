@@ -4,6 +4,10 @@ import { getVisibleItems, getCheckedItems, updateSelectionState } from './select
 import { getSelectedUrls } from './actions.js';
 
 export function handleKeyboardShortcuts(e, setGroupedView) {
+  if (document.querySelector('dialog[open]')) {
+    return;
+  }
+
   const tag = e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
     if (e.key === 'Escape') {

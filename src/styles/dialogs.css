@@ -244,3 +244,9 @@
 .pp-type-popover-option:hover {
   background: var(--pp-bg-subtle);
 }
+
+.pp-more-option:focus-visible,
+.pp-type-popover-option:focus-visible {
+  outline: 2px solid var(--pp-border-focus);
+  outline-offset: -2px;
+}

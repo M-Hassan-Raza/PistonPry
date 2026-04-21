@@ -118,6 +118,14 @@
   border-color: var(--pp-accent);
 }
 
+.pp-regex-toggle:focus-visible,
+.pp-view-btn:focus-visible,
+.pp-sort-btn:focus-visible,
+.pp-suggestion-chip:focus-visible {
+  outline: 2px solid var(--pp-border-focus);
+  outline-offset: 2px;
+}
+
 .pp-select {
   padding: 7px 28px 7px 10px;
   border: 1px solid var(--pp-border-default);

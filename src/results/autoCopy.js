@@ -18,6 +18,7 @@ export async function initAutoCopy() {
 function updateAutoCopyUI(enabled) {
   dom.autoCopyToggle.textContent = 'Auto-copy: ' + (enabled ? 'On' : 'Off');
   dom.autoCopyToggle.classList.toggle('active', enabled);
+  dom.autoCopyToggle.setAttribute('aria-pressed', String(enabled));
 }
 
 export async function toggleAutoCopy() {

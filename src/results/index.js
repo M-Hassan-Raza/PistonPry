@@ -2,10 +2,9 @@ import '../styles/main.css';
 import { state, $$, $, dom, initDom } from './state.js';
 import { normalizeCurrentExtractionRecord } from '../shared/extractedItems.js';
 import { showToast } from './toast.js';
-import { classifyLink } from '../shared/classify.js';
 import { sanitizeUrl } from '../shared/sanitize.js';
-import { renderLinks, renderGroupedView, renderEmptyState } from './render.js';
-import { getProcessedLinks, applyFilters, resetFilters, populateTypeFilter, updateItemTypeCounts, hasActiveFilters } from './filters.js';
+import { renderLinks, renderGroupedView } from './render.js';
+import { getProcessedLinks, applyFilters, resetFilters, populateTypeFilter, updateItemTypeCounts } from './filters.js';
 import { getVisibleItems, updateSelectionState } from './selection.js';
 import { copyAll, getVisibleItemData } from './actions.js';
 import { exportLinks } from './export.js';
@@ -57,13 +56,15 @@ function setGroupedView(grouped) {
   state.isGroupedView = grouped;
   dom.viewFlatBtn.classList.toggle('active', !grouped);
   dom.viewGroupedBtn.classList.toggle('active', grouped);
+  dom.viewFlatBtn.setAttribute('aria-pressed', String(!grouped));
+  dom.viewGroupedBtn.setAttribute('aria-pressed', String(grouped));
   renderCurrentView();
 }
 
 function showTypePopover(anchorEl) {
   const types = [...new Set(getVisibleItems().map(li => li.dataset.type))].sort();
   if (types.length === 0) {
-    showToast('info', 'No link types available');
+    showToast('info', 'No item types available');
     return;
   }
 
@@ -80,7 +81,7 @@ function showTypePopover(anchorEl) {
       });
       updateSelectionState();
       dom.typePopover.classList.remove('open');
-      showToast('info', 'Selected', `All "${t}" links selected`);
+      showToast('info', 'Selected', `All "${t}" items selected`);
     });
     dom.typePopover.appendChild(btn);
   });
@@ -89,6 +90,86 @@ function showTypePopover(anchorEl) {
   dom.typePopover.style.top = (rect.bottom + 4) + 'px';
   dom.typePopover.style.left = rect.left + 'px';
   dom.typePopover.classList.add('open');
+}
+
+function getMenuItems(menu) {
+  return [...menu.querySelectorAll('[role="menuitem"]')];
+}
+
+function closeMenu(trigger, menu, restoreFocus = false) {
+  menu.classList.remove('open');
+  trigger.setAttribute('aria-expanded', 'false');
+  if (restoreFocus) {
+    trigger.focus();
+  }
+}
+
+function closeMenus() {
+  closeMenu(dom.exportToggle, dom.exportMenu);
+  closeMenu(dom.moreToggle, dom.moreMenu);
+}
+
+function openMenu(trigger, menu) {
+  closeMenus();
+  menu.classList.add('open');
+  trigger.setAttribute('aria-expanded', 'true');
+}
+
+function focusMenuItem(menu, index) {
+  const items = getMenuItems(menu);
+  if (items.length === 0) {
+    return;
+  }
+
+  const safeIndex = (index + items.length) % items.length;
+  items[safeIndex].focus();
+}
+
+function bindMenu(trigger, menu) {
+  trigger.addEventListener('click', () => {
+    if (menu.classList.contains('open')) {
+      closeMenu(trigger, menu);
+    } else {
+      openMenu(trigger, menu);
+    }
+  });
+
+  trigger.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openMenu(trigger, menu);
+      focusMenuItem(menu, 0);
+    }
+    if (e.key === 'Escape') {
+      closeMenu(trigger, menu);
+    }
+  });
+
+  menu.addEventListener('keydown', (e) => {
+    const items = getMenuItems(menu);
+    const currentIndex = items.indexOf(document.activeElement);
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      focusMenuItem(menu, currentIndex + 1);
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      focusMenuItem(menu, currentIndex - 1);
+    }
+    if (e.key === 'Home') {
+      e.preventDefault();
+      focusMenuItem(menu, 0);
+    }
+    if (e.key === 'End') {
+      e.preventDefault();
+      focusMenuItem(menu, items.length - 1);
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeMenu(trigger, menu, true);
+    }
+  });
 }
 
 // Listen for re-render events (from inline edit)
@@ -126,7 +207,8 @@ function attachEvents() {
   dom.regexToggle.addEventListener('click', () => {
     state.isRegexMode = !state.isRegexMode;
     dom.regexToggle.classList.toggle('active', state.isRegexMode);
-    dom.searchInput.placeholder = state.isRegexMode ? 'Regex filter...' : 'Filter links...';
+    dom.regexToggle.setAttribute('aria-pressed', String(state.isRegexMode));
+    dom.searchInput.placeholder = state.isRegexMode ? 'Regex filter...' : 'Filter items...';
     applyFilters();
   });
 
@@ -136,6 +218,7 @@ function attachEvents() {
     const dupCount = getDuplicateCount();
     dom.dedupToggle.textContent = state.isDedupActive ? `Dedup: On (${dupCount})` : 'Dedup: Off';
     dom.dedupToggle.classList.toggle('active', state.isDedupActive);
+    dom.dedupToggle.setAttribute('aria-pressed', String(state.isDedupActive));
     renderCurrentView();
   });
 
@@ -189,23 +272,16 @@ function attachEvents() {
   });
 
   // Export dropdown
-  dom.exportToggle.addEventListener('click', () => {
-    const open = dom.exportMenu.classList.toggle('open');
-    dom.exportToggle.setAttribute('aria-expanded', String(open));
-  });
+  bindMenu(dom.exportToggle, dom.exportMenu);
   dom.exportMenu.querySelectorAll('.pp-export-option').forEach(btn => {
     btn.addEventListener('click', () => {
       exportLinks(btn.dataset.format);
-      dom.exportMenu.classList.remove('open');
-      dom.exportToggle.setAttribute('aria-expanded', 'false');
+      closeMenu(dom.exportToggle, dom.exportMenu);
     });
   });
 
   // More dropdown
-  dom.moreToggle.addEventListener('click', () => {
-    const open = dom.moreMenu.classList.toggle('open');
-    dom.moreToggle.setAttribute('aria-expanded', String(open));
-  });
+  bindMenu(dom.moreToggle, dom.moreMenu);
 
   // Invert selection
   $('#invertSelectionBtn').addEventListener('click', () => {
@@ -215,12 +291,12 @@ function attachEvents() {
       li.classList.toggle('selected', cb.checked);
     });
     updateSelectionState();
-    dom.moreMenu.classList.remove('open');
+    closeMenu(dom.moreToggle, dom.moreMenu);
   });
 
   // Select by type
   $('#selectByTypeBtn').addEventListener('click', (e) => {
-    dom.moreMenu.classList.remove('open');
+    closeMenu(dom.moreToggle, dom.moreMenu);
     showTypePopover(e.target);
   });
 
@@ -297,12 +373,10 @@ function attachEvents() {
   // Close menus on outside click
   document.addEventListener('click', (e) => {
     if (!dom.exportToggle.contains(e.target) && !dom.exportMenu.contains(e.target)) {
-      dom.exportMenu.classList.remove('open');
-      dom.exportToggle.setAttribute('aria-expanded', 'false');
+      closeMenu(dom.exportToggle, dom.exportMenu);
     }
     if (!dom.moreToggle.contains(e.target) && !dom.moreMenu.contains(e.target)) {
-      dom.moreMenu.classList.remove('open');
-      dom.moreToggle.setAttribute('aria-expanded', 'false');
+      closeMenu(dom.moreToggle, dom.moreMenu);
     }
     if (!dom.typePopover.contains(e.target) && !e.target.closest('#selectByTypeBtn')) {
       dom.typePopover.classList.remove('open');
@@ -314,6 +388,10 @@ function attachEvents() {
 async function init() {
   initDom();
   attachEvents();
+  dom.regexToggle.setAttribute('aria-pressed', 'false');
+  dom.dedupToggle.setAttribute('aria-pressed', 'false');
+  dom.viewFlatBtn.setAttribute('aria-pressed', 'true');
+  dom.viewGroupedBtn.setAttribute('aria-pressed', 'false');
 
   // Check if viewing a saved collection
   const params = new URLSearchParams(window.location.search);
