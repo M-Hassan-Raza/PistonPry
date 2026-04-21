@@ -1,5 +1,4 @@
-import { state } from './state.js';
-import { escapeHtml } from '../shared/sanitize.js';
+import { escapeHtml, sanitizeUrl } from '../shared/sanitize.js';
 import { showToast } from './toast.js';
 import { getVisibleItemData } from './actions.js';
 
@@ -47,7 +46,11 @@ export function exportLinks(format) {
     case 'html':
       content = '<ul>\n' + items.map(i => {
         const label = escapeHtml(i.text || i.url);
-        return '  <li><a href="' + escapeHtml(i.url) + '">' + label + '</a></li>';
+        const safeUrl = sanitizeUrl(i.url);
+        if (!safeUrl) {
+          return '  <li>' + label + '</li>';
+        }
+        return '  <li><a href="' + escapeHtml(safeUrl) + '" rel="noopener noreferrer">' + label + '</a></li>';
       }).join('\n') + '\n</ul>';
       filename = 'links.html';
       mimeType = 'text/html';
