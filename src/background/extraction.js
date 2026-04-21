@@ -1,4 +1,5 @@
 import { classifyLink, classifyImage } from '../shared/classify.js';
+import { createCurrentExtractionRecord } from '../shared/extractedItems.js';
 import { showPageNotification } from './notification.js';
 import { saveExtractionHistory } from './history.js';
 
@@ -38,11 +39,11 @@ export async function handleExtractedLinks(request, sender, sendResponse) {
   const sourceTitle = sender.tab?.title || '';
 
   await chrome.storage.session.set({
-    currentExtraction: {
-      links: processedLinks,
+    currentExtraction: createCurrentExtractionRecord({
+      items: processedLinks,
       sourceUrl,
       sourceTitle,
-    },
+    }),
   });
 
   chrome.tabs.create({ url: chrome.runtime.getURL('results.html') });

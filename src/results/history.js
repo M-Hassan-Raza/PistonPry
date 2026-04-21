@@ -1,10 +1,22 @@
 import { dom } from './state.js';
+import { normalizeCurrentExtractionRecord, normalizeHistoryRecord } from '../shared/extractedItems.js';
 import { formatDateRelative } from '../shared/format.js';
 import { showToast } from './toast.js';
 
 export async function loadHistory() {
   const result = await chrome.storage.local.get('extractionHistory');
-  const history = result.extractionHistory || [];
+  const rawHistory = Array.isArray(result.extractionHistory) ? result.extractionHistory : [];
+  let changed = false;
+  const history = rawHistory.map((entry) => {
+    const normalized = normalizeHistoryRecord(entry);
+    changed = changed || normalized.changed;
+    return normalized.record;
+  });
+
+  if (changed) {
+    await chrome.storage.local.set({ extractionHistory: history });
+  }
+
   renderHistory(history);
 }
 
@@ -38,7 +50,7 @@ function renderHistory(history) {
 
     const count = document.createElement('span');
     count.className = 'pp-collection-count';
-    count.textContent = entry.count + ' links';
+    count.textContent = entry.count + ' items';
 
     const time = document.createElement('span');
     time.className = 'pp-collection-count';
@@ -51,13 +63,13 @@ function renderHistory(history) {
     reopenBtn.className = 'pp-btn pp-btn--secondary pp-btn--sm';
     reopenBtn.textContent = 'Re-open';
     reopenBtn.addEventListener('click', async () => {
-      if (entry.allLinks && entry.allLinks.length > 0) {
+      if (entry.items && entry.items.length > 0) {
         await chrome.storage.session.set({
-          currentExtraction: {
-            links: entry.allLinks,
+          currentExtraction: normalizeCurrentExtractionRecord({
+            items: entry.items,
             sourceUrl: entry.sourceUrl,
             sourceTitle: entry.sourceTitle,
-          },
+          }).record,
         });
         window.location.href = chrome.runtime.getURL('results.html');
       } else {
@@ -72,13 +84,13 @@ function renderHistory(history) {
     top.appendChild(actions);
     card.appendChild(top);
 
-    if (entry.links && entry.links.length > 0) {
+    if (entry.items && entry.items.length > 0) {
       const preview = document.createElement('div');
       preview.className = 'pp-history-preview';
-      entry.links.slice(0, 3).forEach(link => {
+      entry.items.slice(0, 3).forEach((item) => {
         const p = document.createElement('div');
         p.className = 'pp-history-preview-url';
-        p.textContent = typeof link === 'string' ? link : (link.url || '');
+        p.textContent = item.url;
         preview.appendChild(p);
       });
       if (entry.count > 3) {

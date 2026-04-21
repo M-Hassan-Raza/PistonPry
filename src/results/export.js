@@ -1,13 +1,10 @@
 import { state } from './state.js';
 import { escapeHtml } from '../shared/sanitize.js';
 import { showToast } from './toast.js';
-import { getVisibleItems } from './selection.js';
+import { getVisibleItemData } from './actions.js';
 
 export function exportLinks(format) {
-  const items = getVisibleItems().map(li => {
-    const idx = parseInt(li.dataset.index);
-    return state.allLinks[idx] || { url: li.dataset.url, text: '' };
-  });
+  const items = getVisibleItemData();
   const urls = items.map(i => i.url);
 
   if (urls.length === 0) {

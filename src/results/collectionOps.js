@@ -1,5 +1,6 @@
 import { state, $ } from './state.js';
 import { sanitizeUrl } from '../shared/sanitize.js';
+import { normalizeExtractedItems } from '../shared/extractedItems.js';
 import { showToast } from './toast.js';
 import { showConfirm } from './dialog.js';
 import { getAllCollections, saveCollection, loadCollections } from './collections.js';
@@ -10,13 +11,12 @@ export async function mergeSelectedCollections() {
   const selected = collections.filter(c => ids.includes(c.id));
 
   const allUrls = new Set();
-  const mergedLinks = [];
+  const mergedItems = [];
   selected.forEach(col => {
-    (col.links || []).forEach(url => {
-      const u = typeof url === 'string' ? url : url.url || url;
-      if (!allUrls.has(u)) {
-        allUrls.add(u);
-        mergedLinks.push(u);
+    col.items.forEach((item) => {
+      if (!allUrls.has(item.url)) {
+        allUrls.add(item.url);
+        mergedItems.push(item);
       }
     });
   });
@@ -24,13 +24,13 @@ export async function mergeSelectedCollections() {
   const name = selected.map(c => c.name).join(' + ');
   const ok = await showConfirm(
     'Merge collections?',
-    `Create "${name}" with ${mergedLinks.length} unique links?`,
+    `Create "${name}" with ${mergedItems.length} unique items?`,
     { confirmText: 'Merge' }
   );
   if (!ok) return;
 
-  await saveCollection(name, mergedLinks, []);
-  showToast('success', 'Merged', `New collection with ${mergedLinks.length} links`);
+  await saveCollection(name, mergedItems, []);
+  showToast('success', 'Merged', `New collection with ${mergedItems.length} items`);
   loadCollections();
 }
 
@@ -40,8 +40,8 @@ export async function diffSelectedCollections() {
   const [colA, colB] = ids.map(id => collections.find(c => c.id === id)).filter(Boolean);
   if (!colA || !colB) return;
 
-  const setA = new Set((colA.links || []).map(l => typeof l === 'string' ? l : l.url || l));
-  const setB = new Set((colB.links || []).map(l => typeof l === 'string' ? l : l.url || l));
+  const setA = new Set(colA.items.map((item) => item.url));
+  const setB = new Set(colB.items.map((item) => item.url));
 
   const onlyA = [...setA].filter(u => !setB.has(u));
   const onlyB = [...setB].filter(u => !setA.has(u));
@@ -93,17 +93,17 @@ export async function importLinks() {
     return;
   }
 
-  const urls = text.split('\n')
+  const items = normalizeExtractedItems(text.split('\n')
     .map(line => line.trim())
-    .filter(line => line && sanitizeUrl(line));
+    .filter(line => line && sanitizeUrl(line)));
 
-  if (urls.length === 0) {
+  if (items.length === 0) {
     showToast('warning', 'No valid URLs found');
     return;
   }
 
-  await saveCollection(name, urls, []);
+  await saveCollection(name, items, []);
   $('#importDialog').close();
-  showToast('success', 'Imported', `${urls.length} links saved as "${name}"`);
+  showToast('success', 'Imported', `${items.length} items saved as "${name}"`);
   loadCollections();
 }

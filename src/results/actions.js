@@ -1,4 +1,4 @@
-import { dom } from './state.js';
+import { dom, state } from './state.js';
 import { showToast } from './toast.js';
 import { showConfirm } from './dialog.js';
 import { getVisibleItems, getCheckedItems } from './selection.js';
@@ -13,12 +13,25 @@ export function flashCopied(btn) {
   }, 1200);
 }
 
+function getItemFromListNode(li) {
+  const index = Number.parseInt(li.dataset.index, 10);
+  return Number.isInteger(index) ? state.allLinks[index] : null;
+}
+
+export function getVisibleItemData() {
+  return getVisibleItems().map(getItemFromListNode).filter(Boolean);
+}
+
+export function getSelectedItemData() {
+  return getCheckedItems().map(getItemFromListNode).filter(Boolean);
+}
+
 export function getVisibleUrls() {
-  return getVisibleItems().map(li => li.querySelector('.pp-link-url')?.href || li.dataset.url);
+  return getVisibleItemData().map((item) => item.url);
 }
 
 export function getSelectedUrls() {
-  return getCheckedItems().map(li => li.querySelector('.pp-link-url')?.href || li.dataset.url);
+  return getSelectedItemData().map((item) => item.url);
 }
 
 export async function copyAll() {
@@ -68,9 +81,9 @@ export async function openSelected() {
 }
 
 export async function downloadSelected() {
-  const items = getCheckedItems().map(li => ({
-    url: li.querySelector('.pp-link-url')?.href || li.dataset.url,
-    type: li.dataset.type,
+  const items = getSelectedItemData().map((item) => ({
+    url: item.url,
+    type: item.type,
   }));
   if (items.length === 0) {
     showToast('warning', 'No links selected');

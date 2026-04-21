@@ -1,19 +1,14 @@
+import { createHistoryRecord } from '../shared/extractedItems.js';
+
 export async function saveExtractionHistory(processedLinks, sourceUrl, sourceTitle) {
   const result = await chrome.storage.local.get('extractionHistory');
   const history = result.extractionHistory || [];
 
-  let hostname = '';
-  try { hostname = new URL(sourceUrl).hostname; } catch { /* ignore */ }
-
-  history.unshift({
-    id: Date.now().toString(),
-    timestamp: new Date().toISOString(),
+  history.unshift(createHistoryRecord({
+    items: processedLinks,
     sourceUrl,
-    sourceTitle: sourceTitle || hostname,
-    count: processedLinks.length,
-    links: processedLinks.slice(0, 5),
-    allLinks: processedLinks,
-  });
+    sourceTitle,
+  }));
 
   if (history.length > 20) history.length = 20;
   await chrome.storage.local.set({ extractionHistory: history });

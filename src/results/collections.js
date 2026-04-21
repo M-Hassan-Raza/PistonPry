@@ -1,26 +1,35 @@
 import { state, $, dom } from './state.js';
 import { sanitizeUrl } from '../shared/sanitize.js';
+import { createCollectionRecord, normalizeCollectionRecord } from '../shared/extractedItems.js';
 import { formatDate } from '../shared/format.js';
 import { showToast } from './toast.js';
 import { showConfirm } from './dialog.js';
 
 export async function getAllCollections() {
   const result = await chrome.storage.local.get('linkCollections');
-  return result.linkCollections || [];
+  const rawCollections = Array.isArray(result.linkCollections) ? result.linkCollections : [];
+  let changed = false;
+  const collections = rawCollections.map((collection) => {
+    const normalized = normalizeCollectionRecord(collection);
+    changed = changed || normalized.changed;
+    return normalized.record;
+  });
+
+  if (changed) {
+    await chrome.storage.local.set({ linkCollections: collections });
+  }
+
+  return collections;
 }
 
-export async function saveCollection(name, links, tags) {
-  const result = await chrome.storage.local.get('linkCollections');
-  const collections = result.linkCollections || [];
-  const newCollection = {
-    id: Date.now().toString(),
+export async function saveCollection(name, items, tags) {
+  const collections = await getAllCollections();
+  const newCollection = createCollectionRecord({
     name,
-    links,
+    items,
     sourceUrl: state.sourceUrl,
-    timestamp: new Date().toISOString(),
-    count: links.length,
-    tags: tags || [],
-  };
+    tags,
+  });
   collections.push(newCollection);
   await chrome.storage.local.set({ linkCollections: collections });
   return newCollection;
@@ -140,7 +149,7 @@ export function renderCollections(collections, filterTag) {
 
     const count = document.createElement('span');
     count.className = 'pp-collection-count';
-    count.textContent = col.count + ' links';
+    count.textContent = col.count + ' items';
 
     const actions = document.createElement('div');
     actions.className = 'pp-collection-actions';

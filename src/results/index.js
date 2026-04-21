@@ -1,12 +1,13 @@
 import '../styles/main.css';
 import { state, $$, $, dom, initDom } from './state.js';
+import { normalizeCurrentExtractionRecord } from '../shared/extractedItems.js';
 import { showToast } from './toast.js';
 import { classifyLink } from '../shared/classify.js';
 import { sanitizeUrl } from '../shared/sanitize.js';
 import { renderLinks, renderGroupedView, renderEmptyState } from './render.js';
 import { getProcessedLinks, applyFilters, resetFilters, populateTypeFilter, updateItemTypeCounts, hasActiveFilters } from './filters.js';
 import { getVisibleItems, updateSelectionState } from './selection.js';
-import { copyAll, getVisibleUrls } from './actions.js';
+import { copyAll, getVisibleItemData } from './actions.js';
 import { exportLinks } from './export.js';
 import { cleanAllUrls } from './urlCleaner.js';
 import { checkAllLinks } from './healthCheck.js';
@@ -273,21 +274,21 @@ function attachEvents() {
       dom.collectionNameInput.focus();
       return;
     }
-    const urls = getVisibleUrls();
-    if (urls.length === 0) {
-      showToast('warning', 'No links to save');
+    const items = getVisibleItemData();
+    if (items.length === 0) {
+      showToast('warning', 'No items to save');
       return;
     }
     const tags = dom.collectionTagsInput.value.trim()
       ? dom.collectionTagsInput.value.split(',').map(t => t.trim()).filter(Boolean)
       : [];
     try {
-      await saveCollection(name, urls, tags);
+      await saveCollection(name, items, tags);
       dom.collectionNameInput.value = '';
       dom.collectionTagsInput.value = '';
       dom.saveForm.hidden = true;
       dom.saveToggle.hidden = false;
-      showToast('success', 'Collection saved', `"${name}" with ${urls.length} links`);
+      showToast('success', 'Collection saved', `"${name}" with ${items.length} items`);
     } catch (err) {
       showToast('error', 'Save failed', err.message);
     }
@@ -323,12 +324,7 @@ async function init() {
       document.title = col.name + ' \u2014 PistonPry';
       state.sourceUrl = col.sourceUrl || '';
       state.sourceTitle = col.name;
-      let tabHostname = '';
-      try { tabHostname = new URL(state.sourceUrl).hostname; } catch { /* ignore */ }
-      state.allLinks = col.links.map(url => {
-        if (typeof url === 'string') return classifyLink(url, tabHostname, '');
-        return url;
-      });
+      state.allLinks = col.items;
     } else {
       showToast('error', 'Collection not found');
       return;
@@ -336,9 +332,13 @@ async function init() {
   } else {
     const data = await chrome.storage.session.get('currentExtraction');
     if (data.currentExtraction) {
-      state.allLinks = data.currentExtraction.links || [];
-      state.sourceUrl = data.currentExtraction.sourceUrl || '';
-      state.sourceTitle = data.currentExtraction.sourceTitle || '';
+      const extraction = normalizeCurrentExtractionRecord(data.currentExtraction);
+      if (extraction.changed) {
+        await chrome.storage.session.set({ currentExtraction: extraction.record });
+      }
+      state.allLinks = extraction.record.items;
+      state.sourceUrl = extraction.record.sourceUrl || '';
+      state.sourceTitle = extraction.record.sourceTitle || '';
     }
   }
 
