@@ -160,7 +160,7 @@ export function renderLinks(links, updateSelectionState) {
   dom.linksList.innerHTML = '';
   state.focusedIndex = -1;
   if (links.length === 0) {
-    dom.linksList.appendChild(renderEmptyState('No links extracted'));
+    dom.linksList.appendChild(renderEmptyState('No items extracted'));
     return;
   }
   const frag = document.createDocumentFragment();
@@ -172,7 +172,7 @@ export function renderGroupedView(links, updateSelectionState) {
   dom.linksList.innerHTML = '';
   state.focusedIndex = -1;
   if (links.length === 0) {
-    dom.linksList.appendChild(renderEmptyState('No links extracted'));
+    dom.linksList.appendChild(renderEmptyState('No items extracted'));
     return;
   }
 

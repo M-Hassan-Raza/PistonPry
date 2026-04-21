@@ -127,7 +127,7 @@ export function handleKeyboardShortcuts(e, setGroupedView) {
     if (selected.length > 0) {
       e.preventDefault();
       navigator.clipboard.writeText(selected.join('\n'));
-      showToast('success', 'Copied', selected.length + ' link(s)');
+      showToast('success', 'Copied', selected.length + ' URL(s)');
     }
   }
 }

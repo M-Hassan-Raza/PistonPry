@@ -7,7 +7,7 @@ export function exportLinks(format) {
   const urls = items.map(i => i.url);
 
   if (urls.length === 0) {
-    showToast('warning', 'No links to export');
+    showToast('warning', 'No items to export');
     return;
   }
 
@@ -68,5 +68,5 @@ export function exportLinks(format) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  showToast('success', 'Exported', `${urls.length} links as ${format.toUpperCase()}`);
+  showToast('success', 'Exported', `${urls.length} items as ${format.toUpperCase()}`);
 }

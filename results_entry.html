@@ -34,7 +34,7 @@
           <button class="pp-btn pp-btn--ghost pp-btn--sm" id="autoCopyToggle" title="Toggle auto-copy on extract">Auto-copy: Off</button>
           <button class="pp-btn pp-btn--primary" id="copyAllBtn">Copy All</button>
           <button class="pp-btn pp-btn--secondary" id="cleanUrlsBtn" title="Strip tracking parameters from all URLs">Clean URLs</button>
-          <button class="pp-btn pp-btn--secondary" id="checkLinksBtn" title="Check link health via HEAD requests">Check Links</button>
+          <button class="pp-btn pp-btn--secondary" id="checkLinksBtn" title="Check URL health via HEAD requests">Check Links</button>
           <button class="pp-btn pp-btn--secondary" id="shareBtn" title="Generate shareable HTML page">Share</button>
           <div class="pp-export-wrap">
             <button class="pp-btn pp-btn--secondary pp-export-toggle" id="exportToggle" aria-haspopup="menu" aria-controls="exportMenu" aria-expanded="false">Export</button>
@@ -80,7 +80,7 @@
           <option value="">All types</option>
         </select>
         <select class="pp-select" id="locationFilter" aria-label="Filter by location">
-          <option value="">All links</option>
+          <option value="">All items</option>
           <option value="internal">Internal</option>
           <option value="external">External</option>
         </select>
@@ -110,7 +110,7 @@
 
       <!-- Action bar (hidden until selection) -->
       <div class="pp-action-bar" id="actionBar" hidden>
-        <input type="checkbox" class="pp-checkbox" id="selectAll" aria-label="Select all links">
+        <input type="checkbox" class="pp-checkbox" id="selectAll" aria-label="Select all items">
         <span class="pp-selection-count" id="selectionCount">0 selected</span>
         <div class="pp-action-buttons" id="actionButtons"></div>
         <div class="pp-more-wrap">
@@ -142,7 +142,7 @@
       <div class="pp-header">
         <h1 class="pp-title">Saved Collections</h1>
         <div class="pp-header-actions">
-          <button class="pp-btn pp-btn--secondary pp-btn--sm" id="importLinksBtn">Import</button>
+          <button class="pp-btn pp-btn--secondary pp-btn--sm" id="importLinksBtn">Import URLs</button>
           <button class="pp-btn pp-btn--secondary pp-btn--sm" id="mergeCollectionsBtn" hidden>Merge Selected</button>
           <button class="pp-btn pp-btn--secondary pp-btn--sm" id="diffCollectionsBtn" hidden>Compare Selected</button>
         </div>
@@ -176,7 +176,7 @@
 
   <!-- Import dialog -->
   <dialog class="pp-dialog pp-dialog--wide" id="importDialog">
-    <div class="pp-dialog-title">Import Links</div>
+    <div class="pp-dialog-title">Import URLs</div>
     <div class="pp-dialog-message">Paste URLs (one per line)</div>
     <textarea class="pp-import-textarea" id="importTextarea" aria-label="URLs to import" rows="10" placeholder="https://example.com&#10;https://another.com&#10;..."></textarea>
     <input type="text" class="pp-save-input" id="importNameInput" aria-label="Imported collection name" placeholder="Collection name..." style="margin-top: 8px;">
@@ -209,7 +209,7 @@
       <div class="pp-shortcut"><kbd>g</kbd> then <kbd>f</kbd> <span>Go flat view</span></div>
       <div class="pp-shortcut"><kbd>?</kbd> <span>Show this help</span></div>
       <div class="pp-shortcut"><kbd>Ctrl</kbd>+<kbd>A</kbd> <span>Select all visible</span></div>
-      <div class="pp-shortcut"><kbd>Ctrl</kbd>+<kbd>C</kbd> <span>Copy selected links</span></div>
+      <div class="pp-shortcut"><kbd>Ctrl</kbd>+<kbd>C</kbd> <span>Copy selected URLs</span></div>
     </div>
     <div class="pp-dialog-actions">
       <button class="pp-btn pp-btn--secondary" id="shortcutsCloseBtn">Close</button>

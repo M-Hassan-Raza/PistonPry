@@ -2,7 +2,7 @@
      "manifest_version": 3,
      "name": "PistonPry",
      "version": "2.0",
-     "description": "A comprehensive web scraping power tool — extract links, images, and emails from any webpage region.",
+     "description": "A comprehensive web extraction tool for links, images, and contacts from any webpage region.",
      "permissions": [
        "activeTab",
        "scripting",
@@ -14,7 +14,7 @@
        "http://*/*"
      ],
      "action": {
-       "default_title": "Extract Links by Region",
+       "default_title": "Extract Items by Region",
        "default_icon": {
          "16": "images/icon16.png",
          "48": "images/icon48.png",
@@ -39,14 +39,14 @@
            "default": "Alt+L",
            "mac": "Command+L"
          },
-         "description": "Activate link extraction tool"
+         "description": "Activate item extraction tool"
        },
        "extract_all": {
          "suggested_key": {
            "default": "Ctrl+Shift+L",
            "mac": "Command+Shift+L"
          },
-         "description": "Extract all links from page"
-       }
+         "description": "Extract all visible items from page"
+      }
      }
 }

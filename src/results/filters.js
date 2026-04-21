@@ -90,7 +90,7 @@ export function applyFilters() {
   });
 
   if (visibleCount === 0 && state.allLinks.length > 0) {
-    dom.linksList.appendChild(renderEmptyState('No links match your filters'));
+    dom.linksList.appendChild(renderEmptyState('No items match your filters'));
   }
 
   dom.countPill.textContent = visibleCount;

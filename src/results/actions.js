@@ -37,7 +37,7 @@ export function getSelectedUrls() {
 export async function copyAll() {
   const urls = getVisibleUrls();
   if (urls.length === 0) {
-    showToast('warning', 'No links to copy');
+    showToast('warning', 'No items to copy');
     return;
   }
   try {
@@ -51,12 +51,12 @@ export async function copyAll() {
 export async function copySelected() {
   const urls = getSelectedUrls();
   if (urls.length === 0) {
-    showToast('warning', 'No links selected');
+    showToast('warning', 'No items selected');
     return;
   }
   try {
     await navigator.clipboard.writeText(urls.join('\n'));
-    showToast('success', 'Copied', urls.length + ' link(s) copied');
+    showToast('success', 'Copied', urls.length + ' URL(s) copied');
   } catch {
     showToast('error', 'Copy failed', 'Could not access clipboard');
   }
@@ -65,7 +65,7 @@ export async function copySelected() {
 export async function openSelected() {
   const urls = getSelectedUrls();
   if (urls.length === 0) {
-    showToast('warning', 'No links selected');
+    showToast('warning', 'No items selected');
     return;
   }
   if (urls.length > 10) {
@@ -86,13 +86,13 @@ export async function downloadSelected() {
     type: item.type,
   }));
   if (items.length === 0) {
-    showToast('warning', 'No links selected');
+    showToast('warning', 'No items selected');
     return;
   }
   const downloadableTypes = ['image', 'pdf', 'document', 'video', 'audio', 'archive'];
   const downloadable = items.filter(i => downloadableTypes.includes(i.type));
   if (downloadable.length === 0) {
-    showToast('warning', 'No downloadable files', 'Select links to images, documents, PDFs, etc.');
+    showToast('warning', 'No downloadable files', 'Select items that point to images, documents, PDFs, and similar files.');
     return;
   }
   if (downloadable.length > 5) {

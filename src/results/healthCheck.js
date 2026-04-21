@@ -38,7 +38,7 @@ async function ensureHealthCheckAccess(origins) {
 export async function checkAllLinks(renderCurrentView) {
   const urls = [...new Set(state.allLinks.map(l => l.url).filter(u => u.startsWith('http')))];
   if (urls.length === 0) {
-    showToast('warning', 'No HTTP links to check');
+    showToast('warning', 'No HTTP URLs to check');
     return;
   }
 
@@ -51,7 +51,7 @@ export async function checkAllLinks(renderCurrentView) {
 
   dom.checkLinksBtn.disabled = true;
   dom.checkLinksBtn.textContent = 'Checking...';
-  showToast('info', 'Checking links', `Testing ${urls.length} URL(s)...`);
+  showToast('info', 'Checking URLs', `Testing ${urls.length} URL(s)...`);
 
   try {
     const response = await new Promise((resolve, reject) => {

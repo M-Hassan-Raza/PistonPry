@@ -10,7 +10,7 @@ export async function initAutoCopy() {
     const urls = state.allLinks.map(l => l.url);
     try {
       await navigator.clipboard.writeText(urls.join('\n'));
-      showToast('info', 'Auto-copied', `${urls.length} link(s) copied to clipboard`);
+      showToast('info', 'Auto-copied', `${urls.length} URL(s) copied to clipboard`);
     } catch { /* clipboard might not be available */ }
   }
 }
